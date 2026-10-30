@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   UserPlus,
   Users,
@@ -7,7 +7,8 @@ import {
   ShieldCheck,
   ClipboardList,
   Eye,
-  CheckCircle2
+  CheckCircle2,
+  FileSpreadsheet
 } from 'lucide-react';
 import { Patient, DashboardStats } from '../types.ts';
 
@@ -16,14 +17,29 @@ interface Props {
   onNavigateRegister: () => void;
   onNavigatePatients: () => void;
   onSelectPatient: (patient: Patient) => void;
+  onExportAllData?: () => Promise<void>;
 }
 
 export const HomeDashboard: React.FC<Props> = ({
   stats,
   onNavigateRegister,
   onNavigatePatients,
-  onSelectPatient
+  onSelectPatient,
+  onExportAllData
 }) => {
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = async () => {
+    if (onExportAllData) {
+      setIsExporting(true);
+      try {
+        await onExportAllData();
+      } finally {
+        setIsExporting(false);
+      }
+    }
+  };
+
   const renderStatusBadge = (status: string) => {
     switch (status) {
       case 'Active':
@@ -80,6 +96,16 @@ export const HomeDashboard: React.FC<Props> = ({
               >
                 <UserPlus className="h-4 w-4 text-amber-300" />
                 <span>New Patient Registration</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleExport}
+                disabled={isExporting}
+                className="inline-flex items-center gap-x-1.5 rounded-lg bg-emerald-700 px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-xs hover:bg-emerald-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 disabled:opacity-60 cursor-pointer"
+                title="Export all database tables into one multi-sheet Excel file (.xlsx)"
+              >
+                <FileSpreadsheet className="h-4 w-4 text-emerald-200" />
+                <span>{isExporting ? 'Exporting...' : 'Export All Data (.xlsx)'}</span>
               </button>
               <button
                 type="button"

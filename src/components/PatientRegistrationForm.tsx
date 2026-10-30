@@ -10,6 +10,7 @@ import {
   Phone
 } from 'lucide-react';
 import { PaymentRecord } from '../types.ts';
+import { apiGetNextPatientId, apiCreatePatient } from '../utils/apiClient';
 
 interface Props {
   onSuccess: (newPatient: any) => void;
@@ -80,23 +81,20 @@ export const PatientRegistrationForm: React.FC<Props> = ({ onSuccess, onCancel }
     const fetchNextId = async () => {
       setLoadingId(true);
       try {
-        const res = await fetch(`/api/patients/next-id?centre=${encodeURIComponent(centre)}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (isMounted && data.nextId) {
-            setPatientId(data.nextId);
-            setLoadingId(false);
-            return;
-          }
+        const nextId = await apiGetNextPatientId(centre);
+        if (isMounted) {
+          setPatientId(nextId);
         }
       } catch (err) {
         console.error('Failed to get next ID', err);
-      }
-      if (isMounted) {
-        const prefix = centre === 'STY Hyderabad' ? 'STY-HYD-' : 'STY-VJA-';
-        const fallbackId = prefix + Math.floor(1000 + Math.random() * 9000);
-        setPatientId(fallbackId);
-        setLoadingId(false);
+        if (isMounted) {
+          const prefix = centre === 'STY Hyderabad' ? 'STY-HYD-' : 'STY-VJA-';
+          setPatientId(prefix + Math.floor(1000 + Math.random() * 9000));
+        }
+      } finally {
+        if (isMounted) {
+          setLoadingId(false);
+        }
       }
     };
 
@@ -225,18 +223,7 @@ export const PatientRegistrationForm: React.FC<Props> = ({ onSuccess, onCancel }
     };
 
     try {
-      const response = await fetch('/api/patients', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to save patient record.');
-      }
-
-      const savedPatient = await response.json();
+      const savedPatient = await apiCreatePatient(payload);
       onSuccess(savedPatient);
     } catch (err: any) {
       setErrorMsg(err.message || 'Error occurred while registering patient.');

@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
+import * as XLSX from 'xlsx';
 import {
   getAllPatients,
   getPatientById,
@@ -12,7 +13,8 @@ import {
   getStats,
   getNextPatientId,
   checkDuplicate,
-  verifyUserLogin
+  verifyUserLogin,
+  getAllExportData
 } from './server/db.ts';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -111,6 +113,30 @@ async function startServer() {
       res.json(stats);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
+    }
+  });
+
+  // 1.1 Export all database tables into a single Excel workbook with multi-sheets
+  app.get('/api/export-excel', (req, res) => {
+    try {
+      const exportData = getAllExportData();
+      const wb = XLSX.utils.book_new();
+
+      for (const [sheetName, rows] of Object.entries(exportData)) {
+        const dataRows = (rows && rows.length > 0) ? rows : [{ Status: 'No records available' }];
+        const ws = XLSX.utils.json_to_sheet(dataRows);
+        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+      }
+
+      const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+
+      const filename = `STY_Clinical_Database_${new Date().toISOString().split('T')[0]}.xlsx`;
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(buffer);
+    } catch (err: any) {
+      console.error('Failed to export excel workbook:', err);
+      res.status(500).json({ error: err.message || 'Failed to export excel workbook' });
     }
   });
 

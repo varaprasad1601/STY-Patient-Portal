@@ -775,4 +775,192 @@ export function verifyUserLogin(mobile: string, password: string) {
   return null;
 }
 
+export function getAllExportData() {
+  const allPatients = db.prepare('SELECT * FROM patients ORDER BY id ASC').all() as any[];
+  const allUsers = db.prepare('SELECT id, name, mobile, role, created_at FROM users').all() as any[];
+
+  // 1. Patients Sheet
+  const patientsSheet = allPatients.map((p) => ({
+    'Patient ID': p.patient_id,
+    'Full Name': p.full_name,
+    'Preferred Name': p.preferred_name || '',
+    'Age': p.age || '',
+    'Gender': p.gender || '',
+    'Mobile': p.mobile || '',
+    'Email': p.email || '',
+    'Centre': p.centre || '',
+    'Admission Date': p.admission_date || '',
+    'Assigned Therapist': p.assigned_therapist || '',
+    'Referred By': p.referred_by || '',
+    'Status': p.status || '',
+    'Chief Complaint': p.chief_complaint || '',
+    'Complaint Region': p.complaint_region || '',
+    'Complaint Side': p.complaint_side || '',
+    'Episode Type': p.episode_type || '',
+    'Pain Score (VAS)': p.pain_score ?? '',
+    'Consultation Fee': p.consultation_fee || '',
+    'Monthly Fee': p.monthly_fee || '',
+    'Occupation': p.occupation || '',
+    'Work Pattern': p.work_pattern || '',
+    'Physical Activity': p.physical_activity || '',
+    'Created At': p.created_at || '',
+    'Updated At': p.updated_at || ''
+  }));
+
+  // 2. Assessments Sheet
+  const assessmentsSheet: any[] = [];
+  allPatients.forEach((p) => {
+    let exam: any = {};
+    let med: any = {};
+    try { exam = p.exam_data ? JSON.parse(p.exam_data) : {}; } catch (e) {}
+    try { med = p.medical_history ? JSON.parse(p.medical_history) : {}; } catch (e) {}
+
+    assessmentsSheet.push({
+      'Patient ID': p.patient_id,
+      'Full Name': p.full_name,
+      'Centre': p.centre || '',
+      'Weight': exam.weight || '',
+      'Height': exam.height || '',
+      'BP': exam.bp || '',
+      'Pulse': exam.pulse || '',
+      'BMI': exam.bmi || '',
+      'Toe Walking S1': exam.toeWalkingS1 || '',
+      'Heel Walking L5': exam.heelWalkingL5 || '',
+      'One Leg Standing L4': exam.oneLegStandingL4 || '',
+      'SLR Left': exam.slrLeft || '',
+      'SLR Right': exam.slrRight || '',
+      'Sensory Deficit': exam.sensoryDeficit || '',
+      'Dorsalis Pedis Pulse': exam.dorsalisPedis || '',
+      'Knee Varus/Valgus': exam.kneeVarusValgus || '',
+      'Knee Fixed Flexion': exam.kneeFixedFlexion || '',
+      'Knee Hyperextension': exam.kneeHyperextension || '',
+      'Knee Range of Motion': exam.kneeRangeOfMotion || '',
+      'Knee Tenderness': exam.kneeTenderness || '',
+      'Investigations / Imaging': exam.investigations || '',
+      'Hypertension Details': med.hypertension?.medications || med.htDmThyroidDetails || '',
+      'Diabetes Details': med.diabetes?.medications || '',
+      'Thyroid Details': med.thyroid?.medications || '',
+      'Major Operations': med.hasMajorOperation ? med.majorOperationDetails : 'None',
+      'Major Illness': med.hasMajorIllness ? med.majorIllnessDetails : 'None',
+      'Radiating Pain': med.hasRadiatingPain ? med.radiatingPainDetails : 'None',
+      'Numbness / Tingling': med.hasNumbness ? med.numbnessDetails : 'None'
+    });
+  });
+
+  // 3. Progress Notes Sheet (Followups)
+  const progressNotesSheet: any[] = [];
+  allPatients.forEach((p) => {
+    if (p.followup_records) {
+      try {
+        const records = JSON.parse(p.followup_records);
+        if (Array.isArray(records)) {
+          records.forEach((rec, idx) => {
+            progressNotesSheet.push({
+              'Note ID': rec.id || `FN-${p.patient_id}-${idx + 1}`,
+              'Patient ID': p.patient_id,
+              'Patient Name': p.full_name,
+              'Followup Date': rec.date || rec.followup_date || '',
+              'Therapist': rec.therapist || rec.therapist_name || p.assigned_therapist || '',
+              'Pain Score (0-10)': rec.painScore ?? rec.pain_score ?? '',
+              'Vitals': rec.vitals || '',
+              'Patient Feedback': rec.feedback || '',
+              'Clinical Notes': rec.clinicalNotes || rec.clinical_notes || '',
+              'Practice Adherence': rec.practiceAdherence || '',
+              'Next Followup Date': rec.nextFollowupDate || rec.next_followup_date || ''
+            });
+          });
+        }
+      } catch (e) {}
+    }
+  });
+
+  // 4. Daily Treatment Logs Sheet (Therapy Plans)
+  const treatmentLogsSheet: any[] = [];
+  allPatients.forEach((p) => {
+    if (p.therapy_plan) {
+      try {
+        const plans = JSON.parse(p.therapy_plan);
+        if (Array.isArray(plans)) {
+          plans.forEach((plan, idx) => {
+            treatmentLogsSheet.push({
+              'Log ID': `TL-${p.patient_id}-W${plan.weekNumber || plan.week || idx + 1}`,
+              'Patient ID': p.patient_id,
+              'Patient Name': p.full_name,
+              'Week Number': plan.weekNumber || plan.week || idx + 1,
+              'Month': plan.month || Math.ceil((plan.weekNumber || idx + 1) / 4),
+              'Title / Theme': plan.title || plan.theme || '',
+              'Asanas / Practices': plan.asanasPractices || plan.practices || '',
+              'Pranayama / Breathing': plan.pranayamaBreathing || plan.pranayama || '',
+              'Props Used': plan.propsUsed || plan.props || '',
+              'Frequency / Duration': plan.frequencyDuration || plan.duration || '',
+              'Status': plan.status || (plan.completed ? 'Completed' : 'Planned'),
+              'Therapist Notes': plan.therapistNotes || plan.notes || '',
+              'Precautions': p.therapy_precautions || ''
+            });
+          });
+        }
+      } catch (e) {}
+    }
+  });
+
+  // 5. Discharge Summaries Sheet
+  const dischargeSummariesSheet: any[] = [];
+  allPatients.filter(p => p.status === 'Completed' || p.status === 'Closed' || p.status === 'Therapy Completed').forEach((p) => {
+    dischargeSummariesSheet.push({
+      'Patient ID': p.patient_id,
+      'Patient Name': p.full_name,
+      'Admission Date': p.admission_date || '',
+      'Status': p.status,
+      'Final Pain Score': p.pain_score ?? '',
+      'Therapy Precautions': p.therapy_precautions || '',
+      'Clinical Notes / Summary': p.notes || '',
+      'Last Updated': p.updated_at || ''
+    });
+  });
+
+  // 6. Receipts Sheet (Payment Records)
+  const receiptsSheet: any[] = [];
+  allPatients.forEach((p) => {
+    if (p.payment_records) {
+      try {
+        const payments = JSON.parse(p.payment_records);
+        if (Array.isArray(payments)) {
+          payments.forEach((pay, idx) => {
+            receiptsSheet.push({
+              'Receipt No': pay.receiptNo || `REC-${p.patient_id}-${idx + 1}`,
+              'Patient ID': p.patient_id,
+              'Patient Name': p.full_name,
+              'Payment Date': pay.date || pay.payment_date || '',
+              'Amount (INR)': pay.amount || 0,
+              'Payment Method': pay.method || pay.payment_method || 'Cash',
+              'Notes': pay.notes || '',
+              'Recorded By': pay.recorded_by || pay.received_by || '',
+              'Status': pay.status || 'Paid'
+            });
+          });
+        }
+      } catch (e) {}
+    }
+  });
+
+  // 7. Audit Logs / System Users Sheet
+  const auditLogsSheet = allUsers.map((u) => ({
+    'User ID': u.id,
+    'Name': u.name,
+    'Mobile': u.mobile,
+    'Role': u.role,
+    'Created At': u.created_at
+  }));
+
+  return {
+    Patients: patientsSheet,
+    Assessments: assessmentsSheet,
+    'Progress Notes': progressNotesSheet,
+    'Daily Treatment Logs': treatmentLogsSheet,
+    'Discharge Summaries': dischargeSummariesSheet,
+    Receipts: receiptsSheet,
+    'Audit Logs': auditLogsSheet
+  };
+}
+
 export default db;

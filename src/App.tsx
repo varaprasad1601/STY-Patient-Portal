@@ -14,6 +14,13 @@ import { PatientEditModal } from './components/PatientEditModal.tsx';
 import { LoginView } from './components/LoginView.tsx';
 import { Patient, DashboardStats } from './types.ts';
 import { CheckCircle2, AlertCircle, AlertTriangle } from 'lucide-react';
+import {
+  apiGetPatients,
+  apiGetStats,
+  apiDeletePatient,
+  apiUpdatePatient,
+  apiExportExcel
+} from './utils/apiClient';
 
 interface AuthUser {
   id: number;
@@ -83,11 +90,8 @@ export default function App() {
   const fetchPatients = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/patients');
-      if (res.ok) {
-        const data = await res.json();
-        setPatients(data);
-      }
+      const data = await apiGetPatients();
+      setPatients(data);
     } catch (err) {
       console.error('Failed to load patients', err);
     } finally {
@@ -97,11 +101,8 @@ export default function App() {
 
   const fetchStats = useCallback(async () => {
     try {
-      const res = await fetch('/api/stats');
-      if (res.ok) {
-        const data = await res.json();
-        setStats(data);
-      }
+      const data = await apiGetStats();
+      setStats(data);
     } catch (err) {
       console.error('Failed to load stats', err);
     }
@@ -128,18 +129,14 @@ export default function App() {
 
   const handleDeletePatient = async (id: number) => {
     try {
-      const res = await fetch(`/api/patients/${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        showToast('Patient record deleted successfully from database.');
-        if (selectedPatient && selectedPatient.id === id) {
-          setSelectedPatient(null);
-          setCurrentView('patients');
-        }
-        fetchPatients();
-        fetchStats();
-      } else {
-        showToast('Failed to delete patient record.', 'error');
+      await apiDeletePatient(id);
+      showToast('Patient record deleted successfully.');
+      if (selectedPatient && selectedPatient.id === id) {
+        setSelectedPatient(null);
+        setCurrentView('patients');
       }
+      fetchPatients();
+      fetchStats();
     } catch (err) {
       showToast('Error deleting patient.', 'error');
     }
@@ -161,18 +158,12 @@ export default function App() {
     if (!patientToUpdate) return;
 
     try {
-      const res = await fetch(`/api/patients/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...patientToUpdate, status: newStatus })
-      });
-      if (res.ok) {
-        showToast(`Patient status updated to "${newStatus}".`);
-        fetchPatients();
-        fetchStats();
-        if (selectedPatient && selectedPatient.id === id) {
-          setSelectedPatient({ ...selectedPatient, status: newStatus as any });
-        }
+      await apiUpdatePatient(id, { ...patientToUpdate, status: newStatus });
+      showToast(`Patient status updated to "${newStatus}".`);
+      fetchPatients();
+      fetchStats();
+      if (selectedPatient && selectedPatient.id === id) {
+        setSelectedPatient({ ...selectedPatient, status: newStatus as any });
       }
     } catch (err) {
       showToast('Failed to update status.', 'error');
@@ -191,22 +182,24 @@ export default function App() {
 
   const handleUpdatePatient = async (updatedPatient: Patient) => {
     try {
-      const res = await fetch(`/api/patients/${updatedPatient.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedPatient)
-      });
-      if (res.ok) {
-        const saved = await res.json();
-        showToast('Patient record updated successfully.');
-        setSelectedPatient(saved);
-        setPatients((prev) => prev.map((p) => (p.id === saved.id ? saved : p)));
-        fetchStats();
-      } else {
-        showToast('Failed to update patient record.', 'error');
-      }
+      const saved = await apiUpdatePatient(updatedPatient.id, updatedPatient);
+      showToast('Patient record updated successfully.');
+      setSelectedPatient(saved);
+      setPatients((prev) => prev.map((p) => (p.id === saved.id ? saved : p)));
+      fetchStats();
     } catch (err) {
       showToast('Error updating patient record.', 'error');
+    }
+  };
+
+  const handleExportAllData = async () => {
+    try {
+      showToast('Preparing multi-sheet Excel export...');
+      await apiExportExcel();
+      showToast('Database exported successfully as multi-sheet Excel workbook (.xlsx)!');
+    } catch (err: any) {
+      console.error('Export failed:', err);
+      showToast(err.message || 'Failed to export database', 'error');
     }
   };
 
@@ -292,6 +285,7 @@ export default function App() {
                 setCurrentView('profile');
               }}
               onDeletePatient={handleDeletePatient}
+              onExportAllData={handleExportAllData}
             />
           )}
 

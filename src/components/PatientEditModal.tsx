@@ -608,7 +608,8 @@ export const PatientEditModal: React.FC<Props> = ({
           language: selectedLanguage
         })
       });
-      if (res.ok) {
+      const contentType = res.headers.get('content-type') || '';
+      if (res.ok && contentType.includes('application/json')) {
         const data = await res.json();
         if (data.transcript) {
           setTranscriptText(data.transcript);

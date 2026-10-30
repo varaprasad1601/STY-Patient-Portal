@@ -9,6 +9,7 @@ import {
   Loader2,
   ArrowRight
 } from 'lucide-react';
+import { apiLogin } from '../utils/apiClient';
 
 interface Props {
   onLoginSuccess: (user: { id: number; mobile: string; name: string; role: string }) => void;
@@ -36,21 +37,11 @@ export const LoginView: React.FC<Props> = ({ onLoginSuccess }) => {
     setErrorMsg(null);
 
     try {
-      const response = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mobile: mobile.trim(), password })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || 'Invalid mobile number or password.');
-      }
+      const user = await apiLogin(mobile.trim(), password);
 
       // Store session locally
-      localStorage.setItem('sty_user', JSON.stringify(data.user));
-      onLoginSuccess(data.user);
+      localStorage.setItem('sty_user', JSON.stringify(user));
+      onLoginSuccess(user);
     } catch (err: any) {
       setErrorMsg(err.message || 'Login failed. Please check your credentials.');
     } finally {

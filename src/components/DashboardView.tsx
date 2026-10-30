@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Users,
   HeartPulse,
   UserPlus,
   ChevronRight,
-  CheckCircle2
+  CheckCircle2,
+  FileSpreadsheet,
+  Download
 } from 'lucide-react';
 import { Patient, DashboardStats } from '../types.ts';
 
@@ -14,12 +16,27 @@ interface Props {
   onNavigatePatients?: () => void;
   onSelectPatient?: (patient: Patient) => void;
   onDeletePatient?: (id: number) => Promise<void>;
+  onExportAllData?: () => Promise<void>;
 }
 
 export const DashboardView: React.FC<Props> = ({
   stats,
   onNavigateRegister,
+  onExportAllData
 }) => {
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = async () => {
+    if (onExportAllData) {
+      setIsExporting(true);
+      try {
+        await onExportAllData();
+      } finally {
+        setIsExporting(false);
+      }
+    }
+  };
+
   return (
     <div className="space-y-6 pb-12">
       {/* Breadcrumb Navigation */}
@@ -31,7 +48,7 @@ export const DashboardView: React.FC<Props> = ({
         <span className="text-[#0C4A60] font-semibold">Overview</span>
       </nav>
 
-      {/* Page Title & Action Button */}
+      {/* Page Title & Action Buttons */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
@@ -42,13 +59,24 @@ export const DashboardView: React.FC<Props> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={onNavigateRegister}
             className="inline-flex items-center gap-1.5 rounded-xl bg-[#0C4A60] px-4 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-[#083344] transition-colors cursor-pointer"
           >
             <UserPlus className="w-3.5 h-3.5 text-amber-300" />
             <span>Register Patient</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={isExporting}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2.5 text-xs font-semibold shadow-xs transition-colors cursor-pointer disabled:opacity-60"
+            title="Export all database tables into one multi-sheet Excel file (.xlsx)"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-200" />
+            <span>{isExporting ? 'Exporting...' : 'Export All Data (.xlsx)'}</span>
           </button>
         </div>
       </div>
