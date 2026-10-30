@@ -1,0 +1,6 @@
+{
+  "name": "Surya Tejas Yogalayam - Patient Management",
+  "description": "Patient registration, clinical case history, and records system for STY Vijayawada and Hyderabad centres with persistent database.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
