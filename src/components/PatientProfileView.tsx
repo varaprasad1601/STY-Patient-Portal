@@ -1313,7 +1313,7 @@ export const PatientProfileView: React.FC<Props> = ({
                 <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
                   <div className="flex items-center gap-1">
                     <audio controls src={patient.complaint_audio} className="h-8 max-w-[220px]" />
-                    <div className="relative shrink-0">
+                    <div className="relative">
                       <button
                         type="button"
                         onClick={() => setShowAudioMenu(!showAudioMenu)}

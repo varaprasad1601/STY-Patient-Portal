@@ -207,14 +207,12 @@ async function startServer() {
   // 7. Update patient
   app.put('/api/patients/:id', (req, res) => {
     try {
-      console.log('DEBUG: Updating patient', req.params.id, 'Payload keys:', Object.keys(req.body));
       const updated = updatePatient(req.params.id, req.body);
       if (!updated) {
         return res.status(404).json({ error: 'Patient not found' });
       }
       res.json(updated);
     } catch (err: any) {
-      console.error('DEBUG: Error updating patient', req.params.id, err);
       res.status(400).json({ error: err.message });
     }
   });

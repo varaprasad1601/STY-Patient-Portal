@@ -1,33 +1,273 @@
 import * as XLSX from 'xlsx';
 import { Patient, DashboardStats } from '../types';
 
+// Default initial seed data for static/Netlify deployments when LocalStorage is empty
+const INITIAL_SEED_PATIENTS: Patient[] = [
+  {
+    id: 1,
+    patient_id: 'PP-00001',
+    full_name: 'Venkata Ramanamurthy K',
+    preferred_name: 'Ramana Murthy',
+    dob: '1974-05-14',
+    age: 52,
+    gender: 'Male',
+    mobile: '+91 98480 23145',
+    email: 'ramana.v@example.com',
+    address: 'Benz Circle, Vijayawada, Andhra Pradesh',
+    preferred_language: 'Telugu',
+    emergency_name: 'Savitri K',
+    emergency_relationship: 'Spouse',
+    emergency_phone: '+91 98480 99881',
+    centre: 'STY Vijayawada',
+    assigned_therapist: 'Dr. Surya Teja (Senior Therapist)',
+    referred_by: 'Dr. Prasad (Orthopedic, Ramesh Hospitals)',
+    status: 'Active',
+    admission_date: '2026-06-15',
+    consultation_fee: '500',
+    consultation_date: '2026-06-15',
+    monthly_fee: '4500',
+    payment_records: JSON.stringify([
+      {
+        id: 'PAY-1',
+        date: '2026-06-15',
+        amount: 500,
+        method: 'UPI',
+        receiptNo: 'STY-RCP-1001',
+        notes: 'Initial Consultation Fee',
+        recorded_by: 'Vara Prasad'
+      }
+    ]),
+    occupation: 'Bank Officer (desk job)',
+    work_pattern: 'Prolonged sitting 7-8 hours daily',
+    physical_activity: 'Irregular walking 15 mins',
+    chief_complaint: 'Severe lower back pain radiating down the left leg along posterior thigh to calf for past 3 months.',
+    complaint_region: 'Lumbar Spine',
+    complaint_side: 'Left',
+    episode_type: 'Recurring',
+    pain_score: 7,
+    medical_history: JSON.stringify({
+      hasMajorOperation: false,
+      majorOperationDetails: '',
+      hasMajorIllness: false,
+      majorIllnessDetails: '',
+      hasHT_DM_Thyroid: true,
+      htDmThyroidDetails: 'Type 2 Diabetes Mellitus (controlled on Metformin 500mg), Hypertension for 4 years',
+      hasMajorTrauma: false,
+      majorTraumaDetails: '',
+      hasRadiatingPain: true,
+      radiatingPainDetails: 'L4-L5 dermatome distribution down left leg',
+      hasNumbness: true,
+      numbnessDetails: 'Tingling and occasional numbness in left lateral foot',
+      hasAbnormalSensation: true,
+      abnormalSensationDetails: 'Pins and needles sensation after prolonged sitting',
+      hasMotorWeakness: false,
+      motorWeaknessDetails: '',
+      hypertension: {
+        has: true,
+        sinceWhen: '4 years',
+        pastReading: '140/90',
+        currentReading: '130/84',
+        medications: 'Telmisartan 40mg'
+      },
+      diabetes: {
+        has: true,
+        type: 'Type 2',
+        sinceWhen: '3 years',
+        pastReading: '160 mg/dL',
+        currentReading: '126 mg/dL',
+        medications: 'Metformin 500mg'
+      }
+    }),
+    exam_data: JSON.stringify({
+      weight: '76 kg',
+      bp: '130/84 mmHg',
+      pulse: '74 bpm',
+      bmi: '26.3',
+      toeWalkingS1: 'Normal bilaterally',
+      heelWalkingL5: 'Mild difficulty on Left side',
+      oneLegStandingL4: 'Unstable left leg (12s) vs right (28s)',
+      slrLeft: 'Positive at 45 degrees with shooting pain',
+      slrRight: 'Negative (80 degrees)',
+      sensoryDeficit: 'Mild hypoesthesia along left L5 dermatome',
+      dorsalisPedis: 'Palpable bilaterally (Good pulse)',
+      kneeVarusValgus: 'Normal alignment',
+      kneeFixedFlexion: 'Nil',
+      kneeHyperextension: 'Nil',
+      investigations: 'MRI Lumbar Spine (May 2026): L4-L5 disc protrusion causing left nerve root impingement.'
+    }),
+    notes: 'Patient advised gentle restorative asanas, pelvic tilting with bolster support, and avoiding forward flexion until review.',
+    created_at: '2026-06-15 09:30:00',
+    updated_at: '2026-06-25 11:15:00'
+  },
+  {
+    id: 2,
+    patient_id: 'PP-00002',
+    full_name: 'Ananya Reddy M',
+    preferred_name: 'Ananya',
+    dob: '1988-11-20',
+    age: 38,
+    gender: 'Female',
+    mobile: '+91 99890 55432',
+    email: 'ananya.reddy@techhub.in',
+    address: 'Gachibowli, Hyderabad, Telangana',
+    preferred_language: 'English',
+    emergency_name: 'Rajesh Reddy',
+    emergency_relationship: 'Spouse',
+    emergency_phone: '+91 99890 11223',
+    centre: 'STY Hyderabad',
+    assigned_therapist: 'Yogacharya Sneha (Yoga Therapist)',
+    referred_by: 'Self / Social Media',
+    status: 'Completed',
+    admission_date: '2026-06-20',
+    consultation_fee: '600',
+    consultation_date: '2026-06-20',
+    monthly_fee: '5000',
+    payment_records: JSON.stringify([]),
+    occupation: 'Software Architect',
+    work_pattern: 'Desk bound 9 hours, computer work',
+    physical_activity: 'Gym twice a week',
+    chief_complaint: 'Cervical stiffness, upper trapezius spasms, and right shoulder dull aching pain with occasional headaches.',
+    complaint_region: 'Cervical Spine',
+    complaint_side: 'Right',
+    episode_type: 'First episode',
+    pain_score: 5,
+    medical_history: JSON.stringify({
+      hasMajorOperation: false,
+      majorOperationDetails: '',
+      hasMajorIllness: false,
+      majorIllnessDetails: '',
+      hasHT_DM_Thyroid: true,
+      htDmThyroidDetails: 'Hypothyroidism (Eltroxin 50mcg)',
+      thyroid: {
+        has: true,
+        type: 'Hypothyroidism',
+        sinceWhen: '2 years',
+        pastReading: 'TSH 6.2',
+        currentReading: 'TSH 2.4',
+        medications: 'Eltroxin 50mcg'
+      }
+    }),
+    exam_data: JSON.stringify({
+      weight: '62 kg',
+      bp: '118/76 mmHg',
+      pulse: '72 bpm',
+      bmi: '22.8',
+      toeWalkingS1: 'Normal',
+      heelWalkingL5: 'Normal',
+      oneLegStandingL4: 'Normal bilaterally (>30s)',
+      slrLeft: 'Negative (85 deg)',
+      slrRight: 'Negative (85 deg)',
+      sensoryDeficit: 'None detected',
+      dorsalisPedis: 'Palpable bilaterally',
+      investigations: 'X-Ray Cervical Spine: Loss of normal cervical lordosis (muscle spasm).'
+    }),
+    notes: 'Initial evaluation completed. Recommended gentle neck mobilization, chest opening with yoga blocks, and thoracic extension.',
+    created_at: '2026-06-20 16:40:00',
+    updated_at: '2026-06-20 17:10:00'
+  },
+  {
+    id: 3,
+    patient_id: 'STY-VJA-2026-0003',
+    full_name: 'Lakshmi Narayana Somayajula',
+    preferred_name: 'S. L. Narayana',
+    dob: '1961-03-08',
+    age: 65,
+    gender: 'Male',
+    mobile: '+91 94401 78901',
+    email: '',
+    address: 'Governorpet, Vijayawada, Andhra Pradesh',
+    preferred_language: 'Telugu',
+    emergency_name: 'Subrahmanyam S',
+    emergency_relationship: 'Son',
+    emergency_phone: '+91 94401 44556',
+    centre: 'STY Vijayawada',
+    assigned_therapist: 'Dr. Surya Teja (Senior Therapist)',
+    referred_by: 'Dr. Murali Mohan (Kamineni Hospital)',
+    status: 'Active',
+    admission_date: '2026-06-22',
+    consultation_fee: '500',
+    consultation_date: '2026-06-22',
+    monthly_fee: '4500',
+    payment_records: JSON.stringify([]),
+    occupation: 'Retired Teacher',
+    work_pattern: 'Sedentary, gardening hobby',
+    physical_activity: 'Morning stroll 20 mins',
+    chief_complaint: 'Bilateral knee pain, crepitus, and difficulty in climbing stairs or sitting cross-legged for more than 5 minutes.',
+    complaint_region: 'Knee',
+    complaint_side: 'Bilateral',
+    episode_type: 'Recurring',
+    pain_score: 6,
+    medical_history: JSON.stringify({
+      hasMajorOperation: true,
+      majorOperationDetails: 'Appendectomy (1998)',
+      hasHT_DM_Thyroid: true,
+      htDmThyroidDetails: 'Hypertension on Telmisartan 40mg',
+      hypertension: {
+        has: true,
+        sinceWhen: '5 years',
+        currentReading: '136/88',
+        medications: 'Telmisartan 40mg'
+      }
+    }),
+    exam_data: JSON.stringify({
+      weight: '79 kg',
+      bp: '136/88 mmHg',
+      pulse: '76 bpm',
+      bmi: '27.4',
+      kneeVarusValgus: 'Bilateral mild Varus (Bow leg) deformity',
+      kneeFixedFlexion: '5 degrees lag bilaterally',
+      investigations: 'Bilateral Knee Standing X-Ray: Grade 2-3 Osteoarthritis with medial joint space narrowing.'
+    }),
+    notes: 'Chair yoga therapy plan configured. Quad strengthening using strap and yoga block, avoiding deep knee flexion or vajrasana.',
+    created_at: '2026-06-22 10:15:00',
+    updated_at: '2026-06-27 12:00:00'
+  }
+];
+
 // Helper to safely parse response as JSON
 async function safeParseJsonResponse(response: Response): Promise<{ ok: boolean; data?: any; error?: string }> {
-  const text = await response.text();
   try {
     const contentType = response.headers.get('content-type') || '';
     if (!contentType.includes('application/json')) {
-      console.error('API Error - Non-JSON response received:', text);
-      return { ok: false, error: 'Non-JSON response received from server' };
+      return { ok: false, error: 'Non-JSON response' };
     }
-    
+    const text = await response.text();
     if (!text || text.trim() === '') {
       return { ok: false, error: 'Empty response body' };
     }
     const data = JSON.parse(text);
     return { ok: response.ok, data };
   } catch (err: any) {
-    console.error('API Error - JSON parse error:', err, 'Content:', text);
-    return { ok: false, error: 'JSON parse error: ' + err.message };
+    return { ok: false, error: err.message || 'JSON parse error' };
   }
 }
 
-// Local storage fallback removed to enforce server-side data consistency
+// Ensure LocalStorage patients initialized
 function getLocalPatients(): Patient[] {
-  return [];
+  try {
+    const stored = localStorage.getItem('sty_patients');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.error('Error reading local patients', e);
+  }
+
+  // Seed default patients into LocalStorage if empty
+  localStorage.setItem('sty_patients', JSON.stringify(INITIAL_SEED_PATIENTS));
+  return INITIAL_SEED_PATIENTS;
 }
 
-function saveLocalPatients(patients: Patient[]): void {}
+function saveLocalPatients(patients: Patient[]): void {
+  try {
+    localStorage.setItem('sty_patients', JSON.stringify(patients));
+  } catch (e) {
+    console.error('Error saving local patients', e);
+  }
+}
 
 /**
  * 1. API LOGIN
@@ -94,12 +334,33 @@ export async function apiGetPatients(options?: { search?: string; centre?: strin
     const response = await fetch(`/api/patients?${queryParams.toString()}`);
     const parsed = await safeParseJsonResponse(response);
     if (parsed.ok && Array.isArray(parsed.data)) {
+      // Sync into local storage as cache
+      saveLocalPatients(parsed.data);
       return parsed.data;
     }
-    throw new Error(parsed.error || 'Failed to fetch patients');
-  } catch (e: any) {
-    throw new Error(e.message || 'Backend server unavailable');
+  } catch (e) {
+    console.warn('Backend server unavailable, fetching patients from client storage');
   }
+
+  // Fallback to local storage
+  let local = getLocalPatients();
+  if (options?.centre && options.centre !== 'All') {
+    local = local.filter((p) => p.centre === options.centre);
+  }
+  if (options?.status && options.status !== 'All') {
+    local = local.filter((p) => p.status === options.status);
+  }
+  if (options?.search && options.search.trim() !== '') {
+    const term = options.search.toLowerCase().trim();
+    local = local.filter(
+      (p) =>
+        p.full_name?.toLowerCase().includes(term) ||
+        p.patient_id?.toLowerCase().includes(term) ||
+        p.mobile?.includes(term) ||
+        p.chief_complaint?.toLowerCase().includes(term)
+    );
+  }
+  return local;
 }
 
 /**
@@ -158,10 +419,26 @@ export async function apiCreatePatient(payload: any): Promise<Patient> {
     if (parsed.ok && parsed.data) {
       return parsed.data;
     }
-    throw new Error(parsed.error || 'Failed to create patient');
-  } catch (e: any) {
-    throw new Error(e.message || 'Backend server unavailable');
+  } catch (e) {
+    console.warn('Backend server unavailable, saving patient to client storage');
   }
+
+  // Fallback save locally
+  const local = getLocalPatients();
+  const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
+  const nextIdStr = payload.patient_id || (await apiGetNextPatientId(payload.centre || 'STY Vijayawada'));
+
+  const newPatient: Patient = {
+    ...payload,
+    id: Date.now(),
+    patient_id: nextIdStr,
+    created_at: now,
+    updated_at: now
+  };
+
+  local.unshift(newPatient);
+  saveLocalPatients(local);
+  return newPatient;
 }
 
 /**
@@ -178,10 +455,34 @@ export async function apiUpdatePatient(id: number | string, payload: any): Promi
     if (parsed.ok && parsed.data) {
       return parsed.data;
     }
-    throw new Error(parsed.error || 'Failed to update patient');
-  } catch (e: any) {
-    throw new Error(e.message || 'Backend server unavailable');
+  } catch (e) {
+    console.warn('Backend server unavailable, updating patient in client storage');
   }
+
+  // Fallback update locally
+  const local = getLocalPatients();
+  const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
+  let updatedObj: Patient | null = null;
+
+  const updatedList: Patient[] = local.map((p) => {
+    if (p.id === id || p.patient_id === String(id)) {
+      const merged: Patient = {
+        ...p,
+        ...payload,
+        updated_at: now
+      };
+      updatedObj = merged;
+      return merged;
+    }
+    return p;
+  });
+
+  if (updatedObj) {
+    saveLocalPatients(updatedList);
+    return updatedObj;
+  }
+
+  throw new Error('Patient not found');
 }
 
 /**
@@ -196,10 +497,15 @@ export async function apiDeletePatient(id: number | string): Promise<boolean> {
     if (parsed.ok) {
       return true;
     }
-    throw new Error(parsed.error || 'Failed to delete patient');
-  } catch (e: any) {
-    throw new Error(e.message || 'Backend server unavailable');
+  } catch (e) {
+    console.warn('Backend server unavailable, deleting patient from client storage');
   }
+
+  // Fallback delete locally
+  const local = getLocalPatients();
+  const filtered = local.filter((p) => p.id !== id && p.patient_id !== String(id));
+  saveLocalPatients(filtered);
+  return true;
 }
 
 /**
@@ -212,10 +518,47 @@ export async function apiGetStats(): Promise<DashboardStats> {
     if (parsed.ok && parsed.data) {
       return parsed.data;
     }
-    throw new Error(parsed.error || 'Failed to fetch stats');
-  } catch (e: any) {
-    throw new Error(e.message || 'Backend server unavailable');
+  } catch (e) {
+    console.warn('Backend server unavailable, calculating stats from client storage');
   }
+
+  // Fallback stats computation locally
+  const local = getLocalPatients();
+  const total = local.length;
+  const activeCount = local.filter((p) => p.status === 'Active').length;
+  const completedCount = local.filter((p) => p.status === 'Completed' || p.status === 'Therapy Completed').length;
+  const vjaCount = local.filter((p) => p.centre === 'STY Vijayawada').length;
+  const hydCount = local.filter((p) => p.centre === 'STY Hyderabad').length;
+
+  let totalPain = 0;
+  let painCount = 0;
+  local.forEach((p) => {
+    if (typeof p.pain_score === 'number' && p.pain_score >= 0) {
+      totalPain += p.pain_score;
+      painCount++;
+    }
+  });
+
+  const avgPainScore = painCount > 0 ? Math.round((totalPain / painCount) * 10) / 10 : 0;
+
+  // Status breakdown
+  const map: Record<string, number> = {};
+  local.forEach((p) => {
+    const st = p.status || 'Active';
+    map[st] = (map[st] || 0) + 1;
+  });
+  const statusBreakdown = Object.keys(map).map((k) => ({ status: k, count: map[k] }));
+
+  return {
+    total,
+    activeCount,
+    completedCount,
+    vjaCount,
+    hydCount,
+    avgPainScore,
+    statusBreakdown,
+    recentRegistrations: local.slice(0, 5)
+  };
 }
 
 /**
