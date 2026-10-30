@@ -606,16 +606,46 @@ export const PatientProfileView: React.FC<Props> = ({
         </div>
       )}
 
-      {/* Breadcrumb Navigation */}
-      <nav className="flex items-center text-xs text-slate-500 gap-1.5 flex-wrap">
-        <span onClick={onBack} className="hover:text-slate-900 cursor-pointer">Home</span>
-        <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-        <span onClick={onBack} className="hover:text-slate-900 cursor-pointer">Patient Management</span>
-        <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-        <span onClick={onBack} className="hover:text-slate-900 cursor-pointer">Patients</span>
-        <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-        <span className="text-[#0C4A60] font-mono font-bold">{patient.patient_id}</span>
-      </nav>
+      {/* Top Header Section with Breadcrumb Navigation & Quick Action Buttons */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
+        <nav className="flex items-center text-xs text-slate-500 gap-1.5 flex-wrap">
+          <span onClick={onBack} className="hover:text-slate-900 cursor-pointer">Home</span>
+          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+          <span onClick={onBack} className="hover:text-slate-900 cursor-pointer">Patient Management</span>
+          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+          <span onClick={onBack} className="hover:text-slate-900 cursor-pointer">Patients</span>
+          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+          <span className="text-[#0C4A60] font-mono font-bold">{patient.patient_id}</span>
+        </nav>
+
+        {/* Quick Action Buttons (Top of Header Section) */}
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <button
+            onClick={() => onEditClick?.('section1')}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#0C4A60] hover:bg-[#083344] transition-all shadow-xs cursor-pointer hover:shadow"
+            title="Edit patient demographics, medical history, physical examination, and 12-week therapy plan"
+          >
+            <Pencil className="w-3.5 h-3.5 text-amber-300" />
+            <span>Edit Patient</span>
+          </button>
+
+          <button
+            onClick={() => setShowPrintSheet(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
+          >
+            <Printer className="w-3.5 h-3.5 text-slate-500" />
+            <span>Print Case Sheet</span>
+          </button>
+
+          <button
+            onClick={() => onDeleteRequest(patient)}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-rose-700 bg-rose-50 border border-rose-200 hover:bg-rose-100 transition-colors cursor-pointer"
+          >
+            <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+            <span>Delete</span>
+          </button>
+        </div>
+      </div>
 
       {/* Top Profile Header Card */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
@@ -651,33 +681,6 @@ export const PatientProfileView: React.FC<Props> = ({
                 </span>
               </div>
             </div>
-          </div>
-
-          {/* Quick Action Buttons */}
-          <div className="flex items-center gap-2.5 self-start sm:self-center flex-wrap">
-            <button
-              onClick={() => onEditClick?.('section1')}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#0C4A60] hover:bg-[#083344] transition-all shadow-xs cursor-pointer hover:shadow"
-              title="Edit patient demographics, medical history, physical examination, and 12-week therapy plan"
-            >
-              <Pencil className="w-3.5 h-3.5 text-amber-300" />
-              <span>Edit Patient</span>
-            </button>
-
-            <button
-              onClick={() => setShowPrintSheet(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
-            >
-              <Printer className="w-3.5 h-3.5 text-slate-500" />
-              <span>Print Case Sheet</span>
-            </button>
-            <button
-              onClick={() => onDeleteRequest(patient)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-rose-700 bg-rose-50 border border-rose-200 hover:bg-rose-100 transition-colors cursor-pointer"
-            >
-              <Trash2 className="w-3.5 h-3.5 text-rose-600" />
-              <span>Delete</span>
-            </button>
           </div>
         </div>
 

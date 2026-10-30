@@ -370,21 +370,33 @@ export function checkDuplicate(mobile: string, fullName: string) {
 
 
 export function getNextPatientId(centre: string): string {
-  const lastPatient = db.prepare(`
-    SELECT patient_id FROM patients 
-    ORDER BY id DESC LIMIT 1
-  `).get() as { patient_id: string } | undefined;
+  const prefix = centre === 'STY Hyderabad' ? 'STY-HYD-' : 'STY-VJA-';
+  const year = new Date().getFullYear();
 
-  let nextSeq = 1;
-  if (lastPatient && lastPatient.patient_id) {
-    const cleaned = lastPatient.patient_id.replace(/\D/g, '');
-    const lastSeq = parseInt(cleaned, 10);
-    if (!isNaN(lastSeq)) {
-      nextSeq = lastSeq + 1;
+  // Clean up any legacy double 2026 in patient_id
+  try {
+    db.exec(`UPDATE patients SET patient_id = REPLACE(patient_id, '2026-2026', '2026-') WHERE patient_id LIKE '%2026-2026%'`);
+  } catch {
+    // ignore
+  }
+
+  const patients = db.prepare(`SELECT patient_id FROM patients WHERE centre = ?`).all(centre) as { patient_id: string }[];
+
+  let maxNum = 0;
+  for (const p of patients) {
+    if (p.patient_id) {
+      const match = p.patient_id.match(/(\d+)$/);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (!isNaN(num) && num < 100000) {
+          maxNum = Math.max(maxNum, num);
+        }
+      }
     }
   }
 
-  return `P${String(nextSeq).padStart(4, '0')}`;
+  const nextSeq = maxNum > 0 ? maxNum + 1 : 1;
+  return `${prefix}${year}-${String(nextSeq).padStart(4, '0')}`;
 }
 
 export function getDefaultTherapyPlan() {

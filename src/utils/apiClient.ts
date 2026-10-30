@@ -385,17 +385,23 @@ export async function apiGetNextPatientId(centre: string): Promise<string> {
 
   local.forEach((p) => {
     if (p.patient_id) {
-      const digits = p.patient_id.replace(/\D/g, '');
-      if (digits) {
-        const num = parseInt(digits, 10);
-        if (!isNaN(num) && num > maxNum) {
-          maxNum = num;
+      // Fix any duplicate 2026 in stored IDs
+      if (p.patient_id.includes('2026-2026')) {
+        p.patient_id = p.patient_id.replace('2026-2026', '2026-');
+      }
+      const match = p.patient_id.match(/(\d+)$/);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (!isNaN(num) && num < 100000) {
+          maxNum = Math.max(maxNum, num);
         }
       }
     }
   });
 
-  const nextSeq = maxNum > 0 ? maxNum + 1 : 1001;
+  saveLocalPatients(local);
+
+  const nextSeq = maxNum > 0 ? maxNum + 1 : 1;
   return `${prefix}${year}-${String(nextSeq).padStart(4, '0')}`;
 }
 
