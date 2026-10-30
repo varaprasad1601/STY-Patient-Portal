@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { isTeluguText } from '../utils/textHelper';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import {
@@ -448,7 +449,7 @@ export const ClinicalCaseSheetDocument: React.FC<Props> = ({
             <span className="text-slate-500 text-[10px] block uppercase font-bold mb-1">
               Primary Presenting Complaint:
             </span>
-            <p className="text-slate-900 font-semibold text-xs leading-relaxed">
+            <p className={`text-slate-900 font-semibold text-xs leading-relaxed ${isTeluguText(patient.chief_complaint) ? 'font-telugu' : ''}`}>
               {patient.chief_complaint || '-'}
             </p>
           </div>
@@ -483,7 +484,7 @@ export const ClinicalCaseSheetDocument: React.FC<Props> = ({
               <span className="font-bold text-slate-800 block text-[10px] uppercase mb-0.5">
                 Intake Audio Recorded Description:
               </span>
-              <p className="italic text-slate-700">"{patient.complaint_transcript}"</p>
+              <p className={`text-slate-700 text-sm ${isTeluguText(patient.complaint_transcript) ? 'font-telugu' : 'italic'}`}>{patient.complaint_transcript}</p>
             </div>
           )}
         </div>

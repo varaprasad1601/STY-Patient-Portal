@@ -1336,7 +1336,7 @@ export const PatientProfileView: React.FC<Props> = ({
 
               <div className={`p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm text-slate-800 leading-relaxed ${isTeluguText(patient.complaint_transcript || transcriptText) ? 'font-telugu' : 'font-sans'}`} lang={isTeluguText(patient.complaint_transcript || transcriptText) ? 'te' : 'en'}>
                 {patient.complaint_transcript || transcriptText ? (
-                  `"${patient.complaint_transcript || transcriptText}"`
+                  <>{patient.complaint_transcript || transcriptText}</>
                 ) : (
                   <span className="text-slate-400 italic">No audio transcript recorded. Use "Edit Patient" to record voice narrative or update symptoms.</span>
                 )}
