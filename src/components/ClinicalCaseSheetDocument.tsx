@@ -882,33 +882,6 @@ export const ClinicalCaseSheetDocument: React.FC<Props> = ({
             <p className="text-slate-800 leading-relaxed font-medium">
               {examData.investigations || '-'}
             </p>
-            {investigationsList.length > 0 && (
-              <div className="mt-3 pt-3 border-t border-slate-200 space-y-2.5">
-                <span className="text-[10px] font-bold text-slate-700 block uppercase mb-1">
-                  Diagnostic Investigations &amp; Uploads (X-Rays, MRI, Reports) ({investigationsList.length}):
-                </span>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {investigationsList.map((doc, idx) => {
-                    const imgUrl = doc.file_url || doc.dataUrl || '';
-                    return (
-                      <div key={idx} className="p-2.5 bg-white border border-slate-200 rounded text-[11px] space-y-1.5 break-inside-avoid">
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-slate-900">{doc.title}</span>
-                          <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-sky-50 text-[#0C4A60] border border-sky-200">{doc.type}</span>
-                        </div>
-                        <span className="text-[10px] text-slate-500 font-mono block">Date: {formatIndianDate(doc.date)}</span>
-                        {doc.notes && <p className="text-[10px] text-slate-700">{doc.notes}</p>}
-                        {imgUrl && (imgUrl.startsWith('data:image') || imgUrl.endsWith('.png') || imgUrl.endsWith('.jpg') || imgUrl.includes('unsplash')) && (
-                          <div className="mt-1.5 rounded overflow-hidden border border-slate-200 bg-slate-50 max-h-48 flex items-center justify-center">
-                            <img src={imgUrl} alt={doc.title} className="max-h-44 object-contain w-full" />
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </section>

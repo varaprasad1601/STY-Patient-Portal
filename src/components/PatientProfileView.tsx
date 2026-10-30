@@ -48,6 +48,7 @@ import {
 } from '../types.ts';
 import { formatIndianDate } from '../utils/dateFormatter';
 import { ClinicalCaseSheetDocument } from './ClinicalCaseSheetDocument';
+import { isTeluguText } from '../utils/textHelper';
 
 
 interface Props {
@@ -1333,7 +1334,7 @@ export const PatientProfileView: React.FC<Props> = ({
                 <span>Speech-to-Text Transcript</span>
               </label>
 
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm text-slate-800 leading-relaxed font-sans">
+              <div className={`p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm text-slate-800 leading-relaxed ${isTeluguText(patient.complaint_transcript || transcriptText) ? 'font-telugu' : 'font-sans'}`} lang={isTeluguText(patient.complaint_transcript || transcriptText) ? 'te' : 'en'}>
                 {patient.complaint_transcript || transcriptText ? (
                   `"${patient.complaint_transcript || transcriptText}"`
                 ) : (

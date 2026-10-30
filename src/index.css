@@ -1,4 +1,30 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Anek+Devanagari:wght@300;400;500;600;700;800&family=Anek+Telugu:wght@300;400;500;600;700;800&family=Mandali&family=Noto+Sans+Devanagari:wght@300;400;500;600;700;800&family=Noto+Sans+Telugu:wght@300;400;500;600;700;800&family=Noto+Serif+Telugu:wght@400;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Suravaram&display=swap');
+
+:root {
+  font-family: 'Plus Jakarta Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+/* Apply Noto Serif Telugu for Telugu text across UI and PDF case sheet */
+.font-telugu,
+[lang="te"],
+.telugu-text,
+.clinical-case-sheet-print *:lang(te) {
+  font-family: 'Noto Serif Telugu', 'Suravaram', serif !important;
+  line-height: 1.85;
+}
+
+.font-hindi,
+[lang="hi"] {
+  font-family: 'Anek Devanagari', 'Noto Sans Devanagari', sans-serif !important;
+  line-height: 1.6;
+}
 
 /* Hide scrollbar utility class */
 .no-scrollbar::-webkit-scrollbar {
