@@ -595,6 +595,23 @@ export const PatientEditModal: React.FC<Props> = ({
     setIsRecording(false);
   };
 
+  // Remove recorded audio
+  const handleRemoveAudio = () => {
+    if (isRecording) {
+      stopRecording();
+    }
+    if (audioUrl && audioUrl.startsWith('blob:')) {
+      try {
+        URL.revokeObjectURL(audioUrl);
+      } catch {
+        // ignore
+      }
+    }
+    setAudioUrl(null);
+    setAudioBase64(null);
+    audioChunksRef.current = [];
+  };
+
   // AI Transcribe via server endpoint
   const handleAiTranscribe = async () => {
     if (!audioBase64) return;
@@ -1432,24 +1449,39 @@ export const PatientEditModal: React.FC<Props> = ({
                 </div>
 
                 {audioUrl && (
-                  <div className="bg-white p-2.5 rounded-xl border border-sky-100 flex items-center gap-3">
-                    <Volume2 className="w-4 h-4 text-[#0C4A60] shrink-0" />
-                    <audio src={audioUrl} controls className="w-full h-8" />
-                    {!isRecording && (
+                  <div className="bg-white p-2.5 rounded-xl border border-sky-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5 w-full sm:w-auto flex-1 min-w-0">
+                      <Volume2 className="w-4 h-4 text-[#0C4A60] shrink-0" />
+                      <audio src={audioUrl} controls className="w-full h-8" />
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                      {!isRecording && (
+                        <button
+                          type="button"
+                          onClick={handleAiTranscribe}
+                          disabled={isAiTranscribing}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-500 text-slate-900 text-xs font-bold shrink-0 transition-colors cursor-pointer"
+                        >
+                          {isAiTranscribing ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Sparkles className="w-3.5 h-3.5" />
+                          )}
+                          <span>AI Transcribe</span>
+                        </button>
+                      )}
+
                       <button
                         type="button"
-                        onClick={handleAiTranscribe}
-                        disabled={isAiTranscribing}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-500 text-slate-900 text-xs font-bold shrink-0 transition-colors cursor-pointer"
+                        onClick={handleRemoveAudio}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-semibold shrink-0 transition-colors cursor-pointer"
+                        title="Remove recorded audio"
                       >
-                        {isAiTranscribing ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <Sparkles className="w-3.5 h-3.5" />
-                        )}
-                        <span>AI Transcribe</span>
+                        <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                        <span>Remove Audio</span>
                       </button>
-                    )}
+                    </div>
                   </div>
                 )}
 

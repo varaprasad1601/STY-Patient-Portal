@@ -1296,9 +1296,9 @@ export const PatientProfileView: React.FC<Props> = ({
 
             {/* Audio Recording Playback if available */}
             {patient.complaint_audio && (
-              <div className="p-3.5 rounded-xl bg-sky-50/60 border border-sky-200 mb-4 flex items-center justify-between gap-4">
+              <div className="p-3.5 rounded-xl bg-sky-50/60 border border-sky-200 mb-4 flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-[#0C4A60] text-white flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-lg bg-[#0C4A60] text-white flex items-center justify-center shrink-0">
                     <Volume2 className="w-4 h-4" />
                   </div>
                   <div>
@@ -1306,7 +1306,23 @@ export const PatientProfileView: React.FC<Props> = ({
                     <span className="text-[11px] text-slate-500">Audio captured during consultation</span>
                   </div>
                 </div>
-                <audio controls src={patient.complaint_audio} className="h-8 max-w-[240px]" />
+
+                <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+                  <audio controls src={patient.complaint_audio} className="h-8 max-w-[220px]" />
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (window.confirm('Are you sure you want to remove this recorded audio?')) {
+                        await persistPatientChanges({ complaint_audio: '' });
+                      }
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-semibold shrink-0 transition-colors cursor-pointer"
+                    title="Remove recorded audio"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                    <span>Remove Audio</span>
+                  </button>
+                </div>
               </div>
             )}
 
