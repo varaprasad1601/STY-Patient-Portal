@@ -34,7 +34,8 @@ import {
   X,
   ShieldAlert,
   Sparkles,
-  Pencil
+  Pencil,
+  MoreVertical
 } from 'lucide-react';
 import {
   Patient,
@@ -267,6 +268,7 @@ export const PatientProfileView: React.FC<Props> = ({
 
   // Selected preview file for lightbox
   const [previewAttachment, setPreviewAttachment] = useState<InvestigationAttachment | null>(null);
+  const [showAudioMenu, setShowAudioMenu] = useState(false);
 
   // Sync state if patient prop updates
   useEffect(() => {
@@ -1309,7 +1311,30 @@ export const PatientProfileView: React.FC<Props> = ({
                 </div>
 
                 <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
-                  <audio controls src={patient.complaint_audio} className="h-8 max-w-[220px]" />
+                  <div className="flex items-center gap-1">
+                    <audio controls src={patient.complaint_audio} className="h-8 max-w-[220px]" />
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setShowAudioMenu(!showAudioMenu)}
+                        className="p-1 rounded-full hover:bg-slate-100 text-slate-500"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+                      {showAudioMenu && (
+                        <div className="absolute right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-10 w-32 py-1">
+                          <a
+                            href={patient.complaint_audio}
+                            download={`Audio_Transcript_${patient.patient_id}.webm`}
+                            className="block px-4 py-2 text-xs text-slate-700 hover:bg-slate-50"
+                            onClick={() => setShowAudioMenu(false)}
+                          >
+                            Download Audio
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                   <button
                     type="button"
                     onClick={async () => {

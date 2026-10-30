@@ -1500,6 +1500,7 @@ export const PatientEditModal: React.FC<Props> = ({
                     value={transcriptText}
                     onChange={(e) => setTranscriptText(e.target.value)}
                     className={`w-full border border-slate-200 rounded-xl p-3 text-sm bg-white text-slate-800 focus:ring-2 focus:ring-[#0C4A60]/20 focus:border-[#0C4A60] ${isTeluguText(transcriptText) ? 'font-telugu' : 'font-sans'}`}
+                    maxLength={10000}
                     lang={isTeluguText(transcriptText) ? 'te' : 'en'}
                   />
                 </div>
