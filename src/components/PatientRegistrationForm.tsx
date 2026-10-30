@@ -23,8 +23,17 @@ export const PatientRegistrationForm: React.FC<Props> = ({ onSuccess, onCancel }
   const [loadingId, setLoadingId] = useState(false);
   const [status, setStatus] = useState('');
 
+  // Helper for today's local date in YYYY-MM-DD
+  const getTodayStr = () => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
+
   // Section 1: Patient Admission & Personal Details
-  const [admissionDate, setAdmissionDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [admissionDate, setAdmissionDate] = useState(getTodayStr);
   const [fullName, setFullName] = useState('');
   const [preferredName, setPreferredName] = useState('');
   const [dob, setDob] = useState('');
@@ -314,9 +323,19 @@ export const PatientRegistrationForm: React.FC<Props> = ({ onSuccess, onCancel }
 
             {/* Admission Date */}
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                Admission Date <span className="text-rose-500">*</span>
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-semibold text-slate-700">
+                  Admission Date <span className="text-rose-500">*</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setAdmissionDate(getTodayStr())}
+                  className="text-[11px] font-semibold text-[#0C4A60] hover:text-[#072d3b] hover:underline cursor-pointer"
+                  title="Update admission date to today"
+                >
+                  Set Today
+                </button>
+              </div>
               <div className="relative">
                 <Calendar className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                 <input

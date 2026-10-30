@@ -122,7 +122,10 @@ export const DashboardView: React.FC<Props> = ({
           </div>
           <div className="mt-3">
             <div className="text-2xl font-extrabold text-slate-900 font-mono">
-              5.6 <span className="text-xs font-normal text-slate-400 font-sans">/ 10</span>
+              {stats && typeof stats.avgPainScore === 'number'
+                ? stats.avgPainScore.toFixed(1)
+                : '0.0'}{' '}
+              <span className="text-xs font-normal text-slate-400 font-sans">/ 10</span>
             </div>
             <div className="mt-2 flex items-center justify-between text-[11px] text-slate-400">
               <span>VAS Scale</span>

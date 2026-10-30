@@ -200,6 +200,7 @@ export interface DashboardStats {
   completedCount: number;
   vjaCount: number;
   hydCount: number;
+  avgPainScore?: number;
   statusBreakdown: { status: string; count: number }[];
   recentRegistrations: Patient[];
 }

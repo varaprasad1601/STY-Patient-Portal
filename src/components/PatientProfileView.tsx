@@ -848,7 +848,44 @@ export const PatientProfileView: React.FC<Props> = ({
                 </div>
               </div>
 
-              {/* Occupation & Work removed */}
+              {/* Occupation */}
+              <div className="flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+                  <Briefcase className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="text-[11px] font-medium text-slate-400 block">Occupation / Profession</span>
+                  <span className="text-sm font-semibold text-slate-900">
+                    {patient.occupation || '-'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Work Pattern */}
+              <div className="flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+                  <Clock className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="text-[11px] font-medium text-slate-400 block">Work Pattern</span>
+                  <span className="text-sm font-semibold text-slate-900">
+                    {patient.work_pattern || '-'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Physical Activity Level */}
+              <div className="flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+                  <Activity className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="text-[11px] font-medium text-slate-400 block">Physical Activity Level</span>
+                  <span className="text-sm font-semibold text-slate-900">
+                    {patient.physical_activity || '-'}
+                  </span>
+                </div>
+              </div>
 
               {/* Residential Address */}
               <div className="flex items-center gap-3.5">
@@ -901,17 +938,17 @@ export const PatientProfileView: React.FC<Props> = ({
                 </div>
               </div>
 
-              {/* Emergency Contact Number (Required by doc) */}
-              <div className="flex items-center gap-3.5 p-3 rounded-xl bg-rose-50/50 border border-rose-100">
-                <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">
+              {/* Emergency Contact Number */}
+              <div className="flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
                   <Phone className="w-5 h-5" />
                 </div>
                 <div>
-                  <span className="text-[11px] font-bold text-rose-800 block">Emergency Contact</span>
+                  <span className="text-[11px] font-medium text-slate-400 block">Emergency Contact</span>
                   <span className="text-sm font-semibold text-slate-900">
                     {patient.emergency_phone ? (
                       <>
-                        <span className="font-mono text-rose-900">{patient.emergency_phone}</span>
+                        <span className="font-mono">{patient.emergency_phone}</span>
                         {patient.emergency_name && ` (${patient.emergency_name}${patient.emergency_relationship ? ` - ${patient.emergency_relationship}` : ''})`}
                       </>
                     ) : (
@@ -1544,7 +1581,7 @@ export const PatientProfileView: React.FC<Props> = ({
                 <span className="text-slate-700 font-medium">{medHistory.familyHistory || '-'}</span>
               </div>
 
-              <div className="md:col-span-2 p-3.5 rounded-xl border border-slate-200 bg-slate-50/60">
+              <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60">
                 <span className="font-semibold text-slate-800 block mb-0.5">
                   Menstrual &amp; Obstetric History:
                 </span>
@@ -1611,11 +1648,34 @@ export const PatientProfileView: React.FC<Props> = ({
               </div>
             </div>
 
-            <div className="p-3.5 border border-slate-200 rounded-xl bg-white space-y-1 mt-4">
-              <span className="text-slate-400 block text-[11px] font-medium">Straight Leg Raise (SLR):</span>
-              <div className="font-semibold text-slate-900 text-xs space-y-0.5">
-                <div>Left: {exam.slrLeft || '-'}</div>
-                <div>Right: {exam.slrRight || '-'}</div>
+            {/* SLR and Circulation & Sensory Findings */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+              <div className="p-3.5 border border-slate-200 rounded-xl bg-white space-y-1">
+                <span className="text-slate-400 block text-[11px] font-medium uppercase tracking-wider">Straight Leg Raise (SLR):</span>
+                <div className="font-semibold text-slate-900 text-xs space-y-0.5">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Left Leg:</span>
+                    <span className="font-bold text-slate-900">{exam.slrLeft || '-'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Right Leg:</span>
+                    <span className="font-bold text-slate-900">{exam.slrRight || '-'}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-3.5 border border-slate-200 rounded-xl bg-white space-y-1">
+                <span className="text-slate-400 block text-[11px] font-medium uppercase tracking-wider">Circulation &amp; Sensory Findings:</span>
+                <div className="font-semibold text-slate-900 text-xs space-y-0.5">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Sensory Deficit:</span>
+                    <span className="font-bold text-slate-900">{exam.sensoryDeficit || '-'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Dorsalis Pedis Pulse:</span>
+                    <span className="font-bold text-slate-900">{exam.dorsalisPedis || '-'}</span>
+                  </div>
+                </div>
               </div>
             </div>
 

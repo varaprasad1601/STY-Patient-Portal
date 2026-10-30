@@ -13,7 +13,7 @@ import { PatientProfileView } from './components/PatientProfileView.tsx';
 import { PatientEditModal } from './components/PatientEditModal.tsx';
 import { LoginView } from './components/LoginView.tsx';
 import { Patient, DashboardStats } from './types.ts';
-import { CheckCircle2, AlertCircle } from 'lucide-react';
+import { CheckCircle2, AlertCircle, AlertTriangle } from 'lucide-react';
 
 interface AuthUser {
   id: number;
@@ -68,6 +68,10 @@ export default function App() {
 
   // Toast notifications
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  // In-App Delete Confirmation State
+  const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
@@ -138,6 +142,17 @@ export default function App() {
       }
     } catch (err) {
       showToast('Error deleting patient.', 'error');
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!patientToDelete) return;
+    setIsDeleting(true);
+    try {
+      await handleDeletePatient(patientToDelete.id);
+    } finally {
+      setIsDeleting(false);
+      setPatientToDelete(null);
     }
   };
 
@@ -258,7 +273,11 @@ export default function App() {
 
         {/* View Content */}
         <main
-          className={`flex-1 px-4 sm:px-8 py-6 sm:py-8 max-w-7xl w-full mx-auto print:p-0 print:m-0 print:max-w-none ${
+          className={`flex-1 w-full mx-auto print:p-0 print:m-0 print:max-w-none ${
+            currentView === 'edit'
+              ? 'p-0 max-w-none'
+              : 'px-4 sm:px-8 py-6 sm:py-8 max-w-7xl'
+          } ${
             currentView === 'profile' ? 'patient-profile-container no-scrollbar' : ''
           }`}
         >
@@ -315,7 +334,7 @@ export default function App() {
               onBack={() => setCurrentView('patients')}
               onStatusChange={handleStatusChange}
               onUpdatePatient={handleUpdatePatient}
-              onDeleteRequest={(p) => handleDeletePatient(p.id)}
+              onDeleteRequest={(p) => setPatientToDelete(p)}
               onEditClick={(sec) => {
                 setEditSection(sec || 'section1');
                 setCurrentView('edit');
@@ -335,6 +354,51 @@ export default function App() {
           )}
         </main>
       </div>
+
+      {/* Confirmation Modal Before Deleting Patient Record */}
+      {patientToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-150">
+            <div className="flex items-start gap-4">
+              <div className="w-11 h-11 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0 border border-rose-100">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-base font-bold text-slate-900">
+                  Confirm Delete Patient Record
+                </h3>
+                <p className="text-xs text-slate-600 mt-1.5 leading-relaxed">
+                  Are you sure you want to permanently delete the clinical record for{' '}
+                  <strong className="text-slate-900">{patientToDelete.full_name}</strong>{' '}
+                  (<span className="font-mono text-slate-700 font-semibold">{patientToDelete.patient_id}</span>)?
+                </p>
+                <p className="text-[11px] text-rose-600 font-medium mt-2 bg-rose-50/80 p-2 rounded-lg border border-rose-100">
+                  This action is permanent and cannot be undone. All clinical case sheets, medical history, physical exams, and fee records will be removed.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => setPatientToDelete(null)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={handleConfirmDelete}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 transition-colors shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                {isDeleting ? 'Deleting Record...' : 'Yes, Delete Record'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

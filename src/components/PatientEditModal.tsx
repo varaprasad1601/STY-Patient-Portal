@@ -84,9 +84,23 @@ export const PatientEditModal: React.FC<Props> = ({
   const [email, setEmail] = useState(patient.email || '');
   const [address, setAddress] = useState(patient.address || '');
   const [preferredLanguage, setPreferredLanguage] = useState(patient.preferred_language || 'Telugu');
+  const [occupation, setOccupation] = useState(patient.occupation || '');
+  const [workPattern, setWorkPattern] = useState(patient.work_pattern || '');
+  const [physicalActivity, setPhysicalActivity] = useState(patient.physical_activity || '');
+
+  const getTodayStr = () => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
 
   const [centre, setCentre] = useState(patient.centre || 'STY Vijayawada');
-  const [admissionDate, setAdmissionDate] = useState(patient.admission_date || '');
+  const [admissionDate, setAdmissionDate] = useState(
+    patient.admission_date ||
+    (patient.created_at ? patient.created_at.split('T')[0].split(' ')[0] : getTodayStr())
+  );
   const [assignedTherapist, setAssignedTherapist] = useState(patient.assigned_therapist || '');
   const [referredBy, setReferredBy] = useState(patient.referred_by || '');
   const [status, setStatus] = useState(patient.status || 'Active');
@@ -358,8 +372,14 @@ export const PatientEditModal: React.FC<Props> = ({
     setEmail(patient.email || '');
     setAddress(patient.address || '');
     setPreferredLanguage(patient.preferred_language || '');
+    setOccupation(patient.occupation || '');
+    setWorkPattern(patient.work_pattern || '');
+    setPhysicalActivity(patient.physical_activity || '');
     setCentre(patient.centre || '');
-    setAdmissionDate(patient.admission_date || '');
+    setAdmissionDate(
+      patient.admission_date ||
+      (patient.created_at ? patient.created_at.split('T')[0].split(' ')[0] : getTodayStr())
+    );
     setAssignedTherapist(patient.assigned_therapist || '');
     setReferredBy(patient.referred_by || '');
     setStatus(patient.status || 'Active');
@@ -758,9 +778,11 @@ export const PatientEditModal: React.FC<Props> = ({
       complaint_audio: audioBase64 || '',
       complaint_transcript: transcriptText.trim(),
 
+      occupation: occupation.trim(),
+      work_pattern: workPattern.trim(),
+      physical_activity: physicalActivity.trim(),
       // Section 3 & 4
       medical_history: JSON.stringify(updatedMedHistory),
-      // occupation, work_pattern, physical_activity removed
 
       exam_data: JSON.stringify(exam),
       investigation_attachments: JSON.stringify(attachments),
@@ -791,114 +813,115 @@ export const PatientEditModal: React.FC<Props> = ({
   };
 
   return (
-    <div className="w-full space-y-6 pb-12 print:hidden">
-      {/* Header Bar */}
-      <div className="bg-white rounded-t-2xl border border-slate-200/90 p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3.5">
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer shrink-0"
-            title="Back to Patient Profile"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div>
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-                Edit Patient Case Sheet
-              </h1>
-              <span className="font-mono text-xs font-extrabold px-2.5 py-0.5 rounded-md bg-sky-50 text-[#0C4A60] border border-sky-200">
-                {patient.patient_id}
-              </span>
+    <div className="w-full pb-12 print:hidden">
+      {/* Edit Screen Header (Non-sticky, scrolls with page) */}
+      <div className="w-full bg-white border-b border-slate-200/80">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-4 sm:py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer shrink-0"
+              title="Back to Patient Profile"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div>
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+                  Edit Patient Case Sheet
+                </h1>
+                <span className="font-mono text-xs font-extrabold px-2.5 py-0.5 rounded-md bg-sky-50 text-[#0C4A60] border border-sky-200">
+                  {patient.patient_id}
+                </span>
+              </div>
+              <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+                Updating clinical information for <strong className="text-slate-800">{fullName || patient.full_name}</strong> across Sections 1 to 5
+              </p>
             </div>
-            <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-              Updating clinical information for <strong className="text-slate-800">{fullName || patient.full_name}</strong> across Sections 1 to 5
-            </p>
           </div>
         </div>
-
-        <div className="flex items-center gap-2.5 self-end sm:self-center">
-          {/* Top Cancel button removed per user request */}
-        </div>
       </div>
 
-      {/* Sticky Section Navigation Tabs - Adjusted to touch main navbar and have bottom shadow */}
-      <div className="sticky top-[96px] z-20 bg-white border-b border-slate-200 shadow-md px-4 sm:px-6 flex items-center gap-4 sm:gap-6 overflow-x-auto text-xs font-semibold no-scrollbar">
-        <button
-          type="button"
-          onClick={() => setActiveSection('section1')}
-          className={`py-3.5 flex items-center gap-2 border-b-2 transition-all whitespace-nowrap cursor-pointer ${
-            activeSection === 'section1'
-              ? 'border-[#0C4A60] text-[#0C4A60] font-bold'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <User className="w-4 h-4" />
-          <span>1. Demographics &amp; Admission</span>
-        </button>
+      {/* Sticky Section Navigation Tabs ONLY - Fixed directly below Main Screen Navbar */}
+      <div className="sticky top-[72px] z-20 w-full bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 flex items-center gap-4 sm:gap-6 overflow-x-auto text-xs font-semibold no-scrollbar">
+          <button
+            type="button"
+            onClick={() => setActiveSection('section1')}
+            className={`py-3.5 flex items-center gap-2 border-b-2 transition-all whitespace-nowrap cursor-pointer ${
+              activeSection === 'section1'
+                ? 'border-[#0C4A60] text-[#0C4A60] font-bold'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <User className="w-4 h-4" />
+            <span>1. Demographics &amp; Admission</span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setActiveSection('section2')}
-          className={`py-3.5 flex items-center gap-2 border-b-2 transition-all whitespace-nowrap cursor-pointer ${
-            activeSection === 'section2'
-              ? 'border-[#0C4A60] text-[#0C4A60] font-bold'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <Mic className="w-4 h-4" />
-          <span>2. Chief Complaint &amp; Audio</span>
-        </button>
+          <button
+            type="button"
+            onClick={() => setActiveSection('section2')}
+            className={`py-3.5 flex items-center gap-2 border-b-2 transition-all whitespace-nowrap cursor-pointer ${
+              activeSection === 'section2'
+                ? 'border-[#0C4A60] text-[#0C4A60] font-bold'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <Mic className="w-4 h-4" />
+            <span>2. Chief Complaint &amp; Audio</span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setActiveSection('section3')}
-          className={`py-3.5 flex items-center gap-2 border-b-2 transition-all whitespace-nowrap cursor-pointer ${
-            activeSection === 'section3'
-              ? 'border-[#0C4A60] text-[#0C4A60] font-bold'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <HeartPulse className="w-4 h-4" />
-          <span>3. Medical History</span>
-        </button>
+          <button
+            type="button"
+            onClick={() => setActiveSection('section3')}
+            className={`py-3.5 flex items-center gap-2 border-b-2 transition-all whitespace-nowrap cursor-pointer ${
+              activeSection === 'section3'
+                ? 'border-[#0C4A60] text-[#0C4A60] font-bold'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <HeartPulse className="w-4 h-4" />
+            <span>3. Medical History</span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setActiveSection('section4')}
-          className={`py-3.5 flex items-center gap-2 border-b-2 transition-all whitespace-nowrap cursor-pointer ${
-            activeSection === 'section4'
-              ? 'border-[#0C4A60] text-[#0C4A60] font-bold'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <Stethoscope className="w-4 h-4" />
-          <span>4. Physical Exam &amp; Vitals</span>
-        </button>
+          <button
+            type="button"
+            onClick={() => setActiveSection('section4')}
+            className={`py-3.5 flex items-center gap-2 border-b-2 transition-all whitespace-nowrap cursor-pointer ${
+              activeSection === 'section4'
+                ? 'border-[#0C4A60] text-[#0C4A60] font-bold'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <Stethoscope className="w-4 h-4" />
+            <span>4. Physical Exam &amp; Vitals</span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setActiveSection('section5')}
-          className={`py-3.5 flex items-center gap-2 border-b-2 transition-all whitespace-nowrap cursor-pointer ${
-            activeSection === 'section5'
-              ? 'border-[#0C4A60] text-[#0C4A60] font-bold'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <Activity className="w-4 h-4 text-emerald-600" />
-          <span>5. 12-Week Therapy Plan</span>
-        </button>
-      </div>
-
-      {errorMsg && (
-        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs">
-          {errorMsg}
+          <button
+            type="button"
+            onClick={() => setActiveSection('section5')}
+            className={`py-3.5 flex items-center gap-2 border-b-2 transition-all whitespace-nowrap cursor-pointer ${
+              activeSection === 'section5'
+                ? 'border-[#0C4A60] text-[#0C4A60] font-bold'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <Activity className="w-4 h-4 text-emerald-600" />
+            <span>5. 12-Week Therapy Plan</span>
+          </button>
         </div>
-      )}
+      </div>
 
       {/* Main Form Content */}
-      <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 pt-6">
+        {errorMsg && (
+          <div className="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs">
+            {errorMsg}
+          </div>
+        )}
+
+        <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
 
           {activeSection === 'section1' && (
             <div className="bg-white rounded-2xl p-6 sm:p-7 shadow-xs border border-slate-200/90 space-y-6 animate-in fade-in duration-150">
@@ -941,9 +964,19 @@ export const PatientEditModal: React.FC<Props> = ({
 
                 {/* Admission Date */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    Admission Date <span className="text-rose-500">*</span>
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-semibold text-slate-700">
+                      Admission Date <span className="text-rose-500">*</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setAdmissionDate(getTodayStr())}
+                      className="text-[11px] font-semibold text-[#0C4A60] hover:text-[#072d3b] hover:underline cursor-pointer"
+                      title="Update admission date to today"
+                    >
+                      Set Today
+                    </button>
+                  </div>
                   <div className="relative">
                     <Calendar className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                     <input
@@ -1117,7 +1150,47 @@ export const PatientEditModal: React.FC<Props> = ({
                   </select>
                 </div>
 
-                {/* Occupation, Work Pattern, Physical Activity removed */}
+                {/* Occupation */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    Occupation / Profession
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Enter Occupation"
+                    value={occupation}
+                    onChange={(e) => setOccupation(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-[#0C4A60]/20 focus:border-[#0C4A60]"
+                  />
+                </div>
+
+                {/* Work Pattern */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    Work Pattern
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Enter Work Pattern"
+                    value={workPattern}
+                    onChange={(e) => setWorkPattern(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-[#0C4A60]/20 focus:border-[#0C4A60]"
+                  />
+                </div>
+
+                {/* Physical Activity Level */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    Physical Activity Level
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Enter Physical Activity Level"
+                    value={physicalActivity}
+                    onChange={(e) => setPhysicalActivity(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-[#0C4A60]/20 focus:border-[#0C4A60]"
+                  />
+                </div>
 
                 {/* Residential Address */}
                 <div className="md:col-span-3">
@@ -1478,31 +1551,151 @@ export const PatientEditModal: React.FC<Props> = ({
               </div>
 
               {/* Baseline Pain Score Box */}
-              <div className="bg-slate-50/80 border border-slate-200 rounded-2xl p-5 mt-5 space-y-3">
+              <div className="bg-slate-50/80 border border-slate-200 rounded-2xl p-5 mt-5 space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
                     BASELINE PAIN SCORE (VISUAL ANALOG SCALE: 0 - 10)
                   </span>
-                  <span className="bg-[#0C4A60] text-amber-300 font-mono text-xs font-extrabold px-3 py-1 rounded-md tracking-wider">
-                    {painScore} / 10
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="hidden sm:inline-block text-xs font-semibold text-slate-500">
+                      {painScore === 0
+                        ? 'No Pain'
+                        : painScore <= 3
+                        ? 'Mild'
+                        : painScore <= 6
+                        ? 'Moderate'
+                        : painScore <= 8
+                        ? 'Severe'
+                        : 'Worst'}
+                    </span>
+                    <span className="bg-[#0C4A60] text-amber-300 font-mono text-xs font-extrabold px-3 py-1 rounded-md tracking-wider shadow-xs">
+                      {painScore} / 10
+                    </span>
+                  </div>
                 </div>
 
-                <input
-                  type="range"
-                  min="0"
-                  max="10"
-                  value={painScore}
-                  onChange={(e) => setPainScore(parseInt(e.target.value, 10))}
-                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#0C4A60]"
-                />
+                <div className="relative pt-1 pb-6 select-none">
+                  {/* Track container with margins so thumb (w-5, 20px) centers exactly at 0% and 100% */}
+                  <div className="relative mx-2.5">
+                    {/* Background Track with Fill */}
+                    <div className="relative h-2.5 bg-slate-200 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-150"
+                        style={{
+                          width: `${(painScore / 10) * 100}%`,
+                          background:
+                            painScore === 0
+                              ? '#94a3b8'
+                              : painScore <= 3
+                              ? 'linear-gradient(90deg, #10b981 0%, #14b8a6 100%)'
+                              : painScore <= 6
+                              ? 'linear-gradient(90deg, #10b981 0%, #f59e0b 100%)'
+                              : painScore <= 8
+                              ? 'linear-gradient(90deg, #10b981 0%, #f59e0b 50%, #ea580c 100%)'
+                              : 'linear-gradient(90deg, #10b981 0%, #f59e0b 35%, #ea580c 70%, #be123c 100%)',
+                        }}
+                      />
+                    </div>
 
-                <div className="flex justify-between text-[11px] text-slate-500 font-medium pt-1">
-                  <span>0 · No Pain</span>
-                  <span>3 · Mild</span>
-                  <span>5 · Moderate</span>
-                  <span>8 · Severe</span>
-                  <span className="text-right">10 ·<br className="sm:hidden" /> Worst</span>
+                    {/* Point Indicators (Ticks and Connector Lines) */}
+                    <div className="relative w-full h-0 pointer-events-none">
+                      {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => {
+                        const pct = (num / 10) * 100;
+                        const isKey = num === 0 || num === 3 || num === 5 || num === 8 || num === 10;
+                        const isCurrent = num === painScore;
+                        const isFilled = num <= painScore;
+                        return (
+                          <div
+                            key={num}
+                            className="absolute -top-3.5 flex flex-col items-center -translate-x-1/2"
+                            style={{ left: `${pct}%` }}
+                          >
+                            {/* Tick dot on the track */}
+                            <div
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                isCurrent
+                                  ? 'opacity-0'
+                                  : isFilled
+                                  ? 'bg-white shadow-xs'
+                                  : 'bg-slate-400/80'
+                              }`}
+                            />
+                            {/* Vertical connector line connecting track to milestone labels below */}
+                            {isKey && (
+                              <div
+                                className={`w-0.5 mt-2.5 transition-all duration-150 ${
+                                  isCurrent
+                                    ? 'h-3.5 bg-[#0C4A60] w-1 rounded-full'
+                                    : isFilled
+                                    ? 'h-2 bg-slate-400'
+                                    : 'h-2 bg-slate-300'
+                                }`}
+                              />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Milestone Labels directly aligned and connected with points */}
+                    <div className="relative w-full mt-3.5 h-5">
+                      {[
+                        { val: 0, text: '0 · No Pain', align: 'left' },
+                        { val: 3, text: '3 · Mild', align: 'center' },
+                        { val: 5, text: '5 · Moderate', align: 'center' },
+                        { val: 8, text: '8 · Severe', align: 'center' },
+                        { val: 10, text: '10 · Worst', align: 'right' },
+                      ].map((item) => {
+                        const isCurrent = painScore === item.val;
+                        const pct = (item.val / 10) * 100;
+                        return (
+                          <button
+                            key={item.val}
+                            type="button"
+                            onClick={() => setPainScore(item.val)}
+                            className={`absolute top-0 text-[11px] transition-all duration-150 cursor-pointer whitespace-nowrap ${
+                              item.align === 'left'
+                                ? 'left-0 -translate-x-1 sm:translate-x-0 text-left'
+                                : item.align === 'right'
+                                ? 'right-0 translate-x-1 sm:translate-x-0 text-right'
+                                : '-translate-x-1/2 text-center'
+                            } ${
+                              isCurrent
+                                ? 'font-bold text-[#0C4A60] scale-105'
+                                : 'font-medium text-slate-500 hover:text-slate-800'
+                            }`}
+                            style={
+                              item.align === 'center'
+                                ? { left: `${pct}%` }
+                                : undefined
+                            }
+                          >
+                            {item.text}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Native input placed precisely over the track area with full drag interaction */}
+                  <input
+                    type="range"
+                    min="0"
+                    max="10"
+                    step="1"
+                    value={painScore}
+                    onChange={(e) => setPainScore(parseInt(e.target.value, 10))}
+                    className="absolute top-0.5 left-0 w-full h-4 opacity-0 cursor-pointer z-30"
+                    aria-label="Baseline Pain Score (0 - 10)"
+                  />
+
+                  {/* Visual Thumb Point that follows the percentage and aligns exactly with connectors */}
+                  <div
+                    className="absolute top-0 w-5 h-5 -ml-2.5 rounded-full bg-[#0C4A60] border-2 border-white shadow-md pointer-events-none transition-all duration-75 flex items-center justify-center z-20"
+                    style={{ left: `calc(10px + ${(painScore / 10)} * (100% - 20px))` }}
+                  >
+                    <div className="w-1.5 h-1.5 rounded-full bg-amber-300" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -2226,8 +2419,8 @@ export const PatientEditModal: React.FC<Props> = ({
 
               {/* SLR & Sensation */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-xs">
-                <div className="p-4 rounded-xl bg-amber-50/50 border border-amber-200 space-y-3">
-                  <h4 className="text-xs font-bold text-amber-900 uppercase tracking-wider">
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+                  <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
                     Straight Leg Raise (SLR) Test
                   </h4>
                   <div className="grid grid-cols-2 gap-3">
@@ -2717,5 +2910,6 @@ export const PatientEditModal: React.FC<Props> = ({
           </div>
         </form>
       </div>
-    );
+    </div>
+  );
 };

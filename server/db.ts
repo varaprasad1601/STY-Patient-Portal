@@ -70,8 +70,7 @@ db.prepare(`
   ON CONFLICT(mobile) DO UPDATE SET password = 'vara@1601', name = 'Vara Prasad', role = 'Admin'
 `).run();
 
-db.prepare("UPDATE patients SET assigned_therapist = REPLACE(assigned_therapist, 'Dr. ', '') WHERE assigned_therapist LIKE 'Dr.%'").run();
-db.prepare("UPDATE patients SET referred_by = REPLACE(referred_by, 'Dr. ', '') WHERE referred_by LIKE 'Dr.%'").run();
+
 
 // Migration: Ensure new enhancement columns exist in patients table
 const enhancementColumns = [
@@ -97,159 +96,14 @@ for (const colDef of enhancementColumns) {
   }
 }
 
-// Migration: Seed customized 12-Week Therapy Plan and Precautions for Lakshmi Narayana Somayajula if null
+// Auto-populate admission_date for existing patients where admission_date is empty
 try {
-  const lakshmiPlan = JSON.stringify([
-    {
-      week: 1,
-      month: 1,
-      theme: "Phase 1: Gentle Mobilization & Joint Decompression",
-      practices: "Chair-seated Sukshma Vyayama, gentle ankle pumps (Gulpha Naman), seated knee extension with heel slide on smooth surface.",
-      pranayama: "Diaphragmatic Breathing, Anulom Vilom (slow rhythmic breathing for HTN regulation, 5-7 mins)",
-      props: "Comfortable sturdy chair with armrest, yoga mat under feet, soft towel roll",
-      duration: "30-40 mins / 5 days a week",
-      notes: "Ensure zero joint pain during knee extension. Do not force full extension if 5 deg lag causes discomfort.",
-      completed: true
-    },
-    {
-      week: 2,
-      month: 1,
-      theme: "Phase 1: Isometric Quadriceps Activation",
-      practices: "Isometric quad sets with towel roll under knee in supine, seated leg lifts with 3-second hold, supported Dandasana with wall support.",
-      pranayama: "Anulom Vilom, Sheetali Pranayama for cooling and reducing systemic inflammatory sensation",
-      props: "Yoga bolster, rolled towel, non-slip mat, wall support",
-      duration: "35-40 mins / 5 days a week",
-      notes: "Focus on vastus medialis obliquus (VMO) isometric firing. Maintain regular breathing during muscle holds.",
-      completed: true
-    },
-    {
-      week: 3,
-      month: 1,
-      theme: "Phase 1: Hamstring & Calf Flexibility without Knee Strain",
-      practices: "Supported Supta Padangusthasana with strap (gentle hamstring release with opposite knee bent), gentle seated forward reach from chair.",
-      pranayama: "Bhramari Pranayama (calming nervous system and pain tolerance), Deep abdominal breathing",
-      props: "Cotton yoga strap, chair, bolster",
-      duration: "40 mins / 5 days a week",
-      notes: "Keep spine neutral. Never lock knee into hyperextension.",
-      completed: false
-    },
-    {
-      week: 4,
-      month: 1,
-      theme: "Phase 1: Pelvic Stability & Adductor Engagement",
-      practices: "Seated block squeeze between knees (gentle adductor strengthening), supine pelvic tilts, gentle ankle rotations.",
-      pranayama: "Anulom Vilom, Ujjayi (soft, relaxing)",
-      props: "Foam yoga block, yoga mat, head pillow",
-      duration: "40 mins / 5 days a week",
-      notes: "Evaluation check-in at end of Month 1: assess knee crepitus and stair-climbing comfort.",
-      completed: false
-    },
-    {
-      week: 5,
-      month: 2,
-      theme: "Phase 2: Closed Kinetic Chain & Balance Progression",
-      practices: "Chair-supported semi-squats (shallow 30-degree knee bend only), standing weight-shifts holding wall bar, heel-to-toe balance drill.",
-      pranayama: "Nadi Shodhana with gentle breath awareness, Sectional Breathing (Vibhagiya Pranayama)",
-      props: "Wall bar or sturdy table, 2 foam blocks",
-      duration: "40-45 mins / 5 days a week",
-      notes: "Knees must not travel forward past toes during shallow knee bends.",
-      completed: false
-    },
-    {
-      week: 6,
-      month: 2,
-      theme: "Phase 2: Hip Abductor Strengthening & Patellar Tracking",
-      practices: "Side-lying leg lifts (mild abduction with bolster support), seated resistance band knee extensions, supported Tadasana alignment.",
-      pranayama: "Anulom Vilom (10 mins), Om chanting for mental relaxation and stress reduction",
-      props: "Light resistance loop band, bolster, chair",
-      duration: "45 mins / 5 days a week",
-      notes: "Ensure alignment of second toe, patella, and anterior superior iliac spine (ASIS).",
-      completed: false
-    },
-    {
-      week: 7,
-      month: 2,
-      theme: "Phase 2: Gluteal Activation & Spinal Alignment",
-      practices: "Supported Setu Bandhasana (bridge pose with yoga block between knees and bolster under sacrum), gentle seated twisting (Bharadvajasana on chair).",
-      pranayama: "Deep Diaphragmatic breathing with mindful exhalation",
-      props: "Yoga bolster, yoga block, chair",
-      duration: "45 mins / 5 days a week",
-      notes: "Avoid excessive lumbar hyperextension; focus on gluteal engagement.",
-      completed: false
-    },
-    {
-      week: 8,
-      month: 2,
-      theme: "Phase 2: Functional Sit-to-Stand Retraining",
-      practices: "Supported sit-to-stand from elevated chair with arms crossed, standing calf raises with hand support, gentle balance posture (Supported Vrikshasana at ankle).",
-      pranayama: "Anulom Vilom and Ujjayi breath",
-      props: "Sturdy chair, wall support",
-      duration: "45 mins / 5 days a week",
-      notes: "Month 2 Clinical Review: reassess VAS pain scale (target reduction from 6/10 to 3/10).",
-      completed: false
-    },
-    {
-      week: 9,
-      month: 3,
-      theme: "Phase 3: Functional Strength & Proprioceptive Drills",
-      practices: "Low-step step-up and step-down drills (2-inch platform) holding railing, tandem standing balance, active seated leg extensions with 5-second hold.",
-      pranayama: "Anulom Vilom, Bhramari Pranayama (10 rounds)",
-      props: "Low wooden stepper (2-3 inches), handrail, yoga mat",
-      duration: "45 mins / 5 days a week",
-      notes: "Step drills must be completely pain-free with slow eccentric control.",
-      completed: false
-    },
-    {
-      week: 10,
-      month: 3,
-      theme: "Phase 3: End-Range Stability & Gentle Hip Openers",
-      practices: "Chair-supported Warrior I (Virabhadrasana I with hands on chair back, high lunge), supported Supta Baddha Konasana with bolsters under both thighs.",
-      pranayama: "Nadi Shodhana Pranayama (10 mins)",
-      props: "2 bolsters, chair, eye pillow",
-      duration: "45 mins / 5 days a week",
-      notes: "No direct floor sitting. Thighs must be fully supported by bolsters.",
-      completed: false
-    },
-    {
-      week: 11,
-      month: 3,
-      theme: "Phase 3: Independent Daily Living Integration",
-      practices: "Dynamic walking coordination with breath synchronization, standing postural alignment checks, self-administered isometric maintenance protocol.",
-      pranayama: "Diaphragmatic breathing and cooling Sheetali Pranayama",
-      props: "Yoga mat, resistance band",
-      duration: "40-45 mins / 5 days a week",
-      notes: "Patient reports confidence in stair climbing and 30-minute independent walking.",
-      completed: false
-    },
-    {
-      week: 12,
-      month: 3,
-      theme: "Phase 3: Discharge Maintenance & Home Practice Protocol",
-      practices: "Consolidated 25-minute Daily Home Yoga Therapy routine: Chair quad sets, hamstring strap stretch, supported bridge, and deep relaxation in supported Savasana.",
-      pranayama: "Anulom Vilom (10 mins) and Om meditation",
-      props: "Yoga mat, strap, bolster for knee support during relaxation",
-      duration: "30 mins daily maintenance",
-      notes: "Final outcome evaluation: WOMAC score improvement, painless knee extension, maintenance schedule handed over.",
-      completed: false
-    }
-  ]);
-
-  const lakshmiPrecautions = `• Strictly avoid sitting on the floor or folding knees deeply (Contraindicated: Vajrasana, Padmasana, deep squats).\n• Do not perform high-impact jogging, jumping, or fast unassisted stair descent.\n• All transitions from sitting to standing must use armrest or chair support.\n• Use bolster or towel roll under knees during supine postures to prevent knee hyperextension.\n• Maintain continuous rhythmic breathing; avoid breath holding (Kumbhaka) to prevent blood pressure spikes (Hypertension).\n• Apply warm fomentation or therapeutic herbal compress if mild stiffness occurs after morning practice.`;
-
-  db.prepare(`
-    UPDATE patients
-    SET therapy_plan = @plan,
-        therapy_precautions = @precautions,
-        admission_date = COALESCE(admission_date, '2026-06-22'),
-        consultation_fee = COALESCE(consultation_fee, '500'),
-        consultation_date = COALESCE(consultation_date, '2026-06-22'),
-        monthly_fee = COALESCE(monthly_fee, '3500')
-    WHERE (full_name LIKE '%Lakshmi Narayana%' OR patient_id = 'P0003' OR patient_id = 'STY-VJA-2026-0003')
-      AND (therapy_plan IS NULL OR therapy_plan = '' OR therapy_precautions IS NULL)
-  `).run({ plan: lakshmiPlan, precautions: lakshmiPrecautions });
+  db.exec(`UPDATE patients SET admission_date = substr(created_at, 1, 10) WHERE admission_date IS NULL OR admission_date = ''`);
 } catch (err: any) {
-  console.error('Error migrating Lakshmi Narayana therapy plan:', err);
+  // Ignore
 }
+
+
 
 
 // Pre-seed initial synthetic data if database is empty
@@ -513,15 +367,7 @@ export function checkDuplicate(mobile: string, fullName: string) {
   `).get(mobile, fullName);
 }
 
-// Migrate patient IDs to P0001 format
-const allPatients = db.prepare("SELECT id FROM patients ORDER BY id ASC").all() as { id: number }[];
-allPatients.forEach((p, idx) => {
-  const newId = `P${String(idx + 1).padStart(4, '0')}`;
-  db.prepare("UPDATE patients SET patient_id = ? WHERE id = ?").run(newId, p.id);
-});
 
-// Migrate Assessment Pending or Therapy Completed to Completed
-db.prepare("UPDATE patients SET status = 'Completed' WHERE status = 'Assessment Pending' OR status = 'Therapy Completed'").run();
 
 export function getNextPatientId(centre: string): string {
   const lastPatient = db.prepare(`
@@ -810,7 +656,9 @@ export function updatePatient(id: number | string, data: any) {
     email: data.email !== undefined ? data.email : (existing.email || ''),
     address: data.address !== undefined ? data.address : (existing.address || ''),
     preferred_language: data.preferred_language !== undefined ? data.preferred_language : (existing.preferred_language || 'Telugu'),
-    admission_date: data.admission_date !== undefined ? data.admission_date : (existing.admission_date || ''),
+    admission_date: (data.admission_date && String(data.admission_date).trim() !== '')
+      ? data.admission_date
+      : (existing.admission_date || (existing.created_at ? existing.created_at.split(' ')[0] : now.split(' ')[0])),
     emergency_name: data.emergency_name !== undefined ? data.emergency_name : (existing.emergency_name || ''),
     emergency_relationship: data.emergency_relationship !== undefined ? data.emergency_relationship : (existing.emergency_relationship || ''),
     emergency_phone: data.emergency_phone !== undefined ? data.emergency_phone : (existing.emergency_phone || ''),
@@ -872,6 +720,18 @@ export function getStats() {
   const vjaCount = (db.prepare("SELECT count(*) as count FROM patients WHERE centre = 'STY Vijayawada'").get() as any).count;
   const hydCount = (db.prepare("SELECT count(*) as count FROM patients WHERE centre = 'STY Hyderabad'").get() as any).count;
 
+  const painRow = db.prepare(`
+    SELECT 
+      AVG(pain_score) as avgScore,
+      COUNT(pain_score) as countWithScore
+    FROM patients 
+    WHERE pain_score IS NOT NULL AND pain_score >= 0
+  `).get() as any;
+
+  const avgPainScore = painRow && painRow.avgScore != null
+    ? Math.round(Number(painRow.avgScore) * 10) / 10
+    : 0;
+
   const statusBreakdown = db.prepare('SELECT status, count(*) as count FROM patients GROUP BY status').all();
   const recentRegistrations = db.prepare('SELECT * FROM patients ORDER BY id DESC LIMIT 5').all();
 
@@ -881,6 +741,7 @@ export function getStats() {
     completedCount,
     vjaCount,
     hydCount,
+    avgPainScore,
     statusBreakdown,
     recentRegistrations
   };
