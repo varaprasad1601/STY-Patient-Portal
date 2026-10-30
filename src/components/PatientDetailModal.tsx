@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   X,
   Printer,
+  Download,
   Calendar,
   Phone,
   MapPin,
@@ -56,7 +57,17 @@ export const PatientDetailModal: React.FC<Props> = ({
     abnormalSensationDetails: '',
     hasMotorWeakness: false,
     motorWeaknessDetails: '',
-    menstrualHistory: ''
+    hasBowelBladderInvolvement: false,
+    bowelBladderDetails: '',
+    hasWeightLossFever: false,
+    weightLossFeverDetails: '',
+    hasGiddiness: false,
+    giddinessDetails: '',
+    hasHeadache: false,
+    headacheDetails: '',
+    menstrualHistory: '',
+    previousEpisodes: '',
+    familyHistory: ''
   };
 
   try {
@@ -84,6 +95,11 @@ export const PatientDetailModal: React.FC<Props> = ({
     kneeVarusValgus: '-',
     kneeFixedFlexion: '-',
     kneeHyperextension: '-',
+    kneeRangeOfMotion: '-',
+    kneeTenderness: '-',
+    kneeEffusion: '-',
+    kneeStabilityTests: '-',
+    extremityJointAssessment: '-',
     investigations: '-'
   };
 
@@ -110,7 +126,8 @@ export const PatientDetailModal: React.FC<Props> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 print:hidden">
+    <>
+      <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 print:hidden">
       <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[92vh] overflow-hidden shadow-xl flex flex-col border border-slate-200">
         {/* Header - Clean, luminous medical card */}
         <div className="p-5 sm:p-6 border-b border-slate-200 bg-white flex items-start justify-between gap-4 print:hidden">
@@ -136,6 +153,14 @@ export const PatientDetailModal: React.FC<Props> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowPrintSheet(true)}
+              className="px-3 py-1.5 rounded-lg bg-sky-50 border border-sky-200 text-[#0C4A60] hover:bg-sky-100 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+              title="Download complete clinical case sheet as PDF"
+            >
+              <Download className="w-3.5 h-3.5 text-[#0C4A60]" />
+              <span>Download PDF</span>
+            </button>
             <button
               onClick={() => setShowPrintSheet(true)}
               className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
@@ -382,6 +407,38 @@ export const PatientDetailModal: React.FC<Props> = ({
                 </span>
               </div>
 
+              <div className="p-3 bg-slate-50/60 rounded-lg border border-slate-200">
+                <span className="font-semibold text-slate-800 block mb-0.5">H/o Giddiness / Dizziness:</span>
+                <span className={medHistory.hasGiddiness ? 'text-rose-700 font-semibold' : 'text-slate-500'}>
+                  {medHistory.hasGiddiness ? `Present: ${medHistory.giddinessDetails || 'Reported'}` : 'Absent'}
+                </span>
+              </div>
+
+              <div className="p-3 bg-slate-50/60 rounded-lg border border-slate-200">
+                <span className="font-semibold text-slate-800 block mb-0.5">H/o Headache:</span>
+                <span className={medHistory.hasHeadache ? 'text-rose-700 font-semibold' : 'text-slate-500'}>
+                  {medHistory.hasHeadache ? `Present: ${medHistory.headacheDetails || 'Reported'}` : 'Absent'}
+                </span>
+              </div>
+
+              <div className="p-3 bg-slate-50/60 rounded-lg border border-slate-200">
+                <span className="font-semibold text-slate-800 block mb-0.5">H/o Bowel / Bladder involvement:</span>
+                <span className={medHistory.hasBowelBladderInvolvement ? 'text-rose-700 font-bold' : 'text-slate-500'}>
+                  {medHistory.hasBowelBladderInvolvement
+                    ? `Present: ${medHistory.bowelBladderDetails || 'Reported'}`
+                    : 'Absent'}
+                </span>
+              </div>
+
+              <div className="p-3 bg-slate-50/60 rounded-lg border border-slate-200">
+                <span className="font-semibold text-slate-800 block mb-0.5">H/o Weight Loss / Fever:</span>
+                <span className={medHistory.hasWeightLossFever ? 'text-rose-700 font-bold' : 'text-slate-500'}>
+                  {medHistory.hasWeightLossFever
+                    ? `Present: ${medHistory.weightLossFeverDetails || 'Reported'}`
+                    : 'Absent'}
+                </span>
+              </div>
+
               {medHistory.menstrualHistory && (
                 <div className="md:col-span-2 p-3 bg-slate-50/60 rounded-lg border border-slate-200">
                   <span className="font-semibold text-slate-800 block mb-0.5">
@@ -455,9 +512,21 @@ export const PatientDetailModal: React.FC<Props> = ({
                 </span>
               </div>
               <div className="p-2.5 border border-slate-200 rounded-lg sm:col-span-2">
-                <span className="text-slate-400 block text-[11px]">Knee Biomechanics:</span>
-                <span className="font-medium text-slate-800">
-                  Alignment: {exam.kneeVarusValgus || 'Normal'} &bull; Fixed Flexion: {exam.kneeFixedFlexion || 'Nil'} &bull; Hyperextension: {exam.kneeHyperextension || 'Nil'}
+                <span className="text-slate-400 block text-[11px]">Knee Biomechanics &amp; Alignment:</span>
+                <div className="font-medium text-slate-800 text-xs mt-1 space-y-0.5">
+                  <div>Alignment: {exam.kneeVarusValgus || 'Normal'}</div>
+                  <div>Flexion: {exam.kneeFixedFlexion || 'Nil'}</div>
+                  <div>Hyperextension: {exam.kneeHyperextension || 'Nil'}</div>
+                  <div>ROM: {exam.kneeRangeOfMotion || '-'}</div>
+                  <div>Tenderness: {exam.kneeTenderness || '-'}</div>
+                  <div>Effusion: {exam.kneeEffusion || '-'}</div>
+                  <div>Stability: {exam.kneeStabilityTests || '-'}</div>
+                </div>
+              </div>
+              <div className="p-2.5 border border-slate-200 rounded-lg sm:col-span-2">
+                <span className="text-slate-400 block text-[11px]">Extremity Joint Assessment:</span>
+                <span className="font-medium text-slate-800 block mt-1">
+                  {exam.extremityJointAssessment || '-'}
                 </span>
               </div>
             </div>
@@ -521,8 +590,7 @@ export const PatientDetailModal: React.FC<Props> = ({
           </button>
         </div>
       </div>
-
-
+    </div>
 
       {showPrintSheet && (
         <ClinicalCaseSheetDocument
@@ -531,6 +599,6 @@ export const PatientDetailModal: React.FC<Props> = ({
           onClose={() => setShowPrintSheet(false)}
         />
       )}
-    </div>
+    </>
   );
 };

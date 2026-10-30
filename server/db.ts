@@ -739,8 +739,8 @@ export function createPatient(data: any) {
     medical_history: typeof data.medical_history === 'string' ? data.medical_history : JSON.stringify(data.medical_history || {}),
     exam_data: typeof data.exam_data === 'string' ? data.exam_data : JSON.stringify(data.exam_data || {}),
     investigation_attachments: typeof data.investigation_attachments === 'string' ? data.investigation_attachments : JSON.stringify(data.investigation_attachments || []),
-    therapy_plan: typeof data.therapy_plan === 'string' ? data.therapy_plan : JSON.stringify(data.therapy_plan || getDefaultTherapyPlan()),
-    therapy_precautions: data.therapy_precautions || 'Avoid heavy forward bending, abrupt twisting, lifting loads > 5 kg, and prolonged unsupported sitting.',
+    therapy_plan: typeof data.therapy_plan === 'string' ? data.therapy_plan : JSON.stringify(data.therapy_plan || []),
+    therapy_precautions: data.therapy_precautions || '',
     followup_records: typeof data.followup_records === 'string' ? data.followup_records : JSON.stringify(data.followup_records || []),
     notes: data.notes || '',
     created_at: now,
@@ -752,6 +752,7 @@ export function createPatient(data: any) {
 
 export function updatePatient(id: number | string, data: any) {
   const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
+  const existing = (getPatientById(id) || {}) as any;
 
   const stmt = db.prepare(`
     UPDATE patients SET
@@ -800,45 +801,59 @@ export function updatePatient(id: number | string, data: any) {
 
   stmt.run({
     id,
-    full_name: data.full_name,
-    preferred_name: data.preferred_name || '',
-    dob: data.dob || '',
-    age: data.age ? parseInt(String(data.age), 10) : null,
-    gender: data.gender || 'Not specified',
-    mobile: data.mobile || '',
-    email: data.email || '',
-    address: data.address || '',
-    preferred_language: data.preferred_language || 'Telugu',
-    admission_date: data.admission_date || '',
-    emergency_name: data.emergency_name || '',
-    emergency_relationship: data.emergency_relationship || '',
-    emergency_phone: data.emergency_phone || '',
-    consultation_fee: data.consultation_fee || '',
-    consultation_date: data.consultation_date || '',
-    monthly_fee: data.monthly_fee || '',
-    payment_records: typeof data.payment_records === 'string' ? data.payment_records : JSON.stringify(data.payment_records || []),
-    centre: data.centre,
-    assigned_therapist: data.assigned_therapist,
-    referred_by: data.referred_by || '',
-    status: data.status,
-    occupation: data.occupation || '',
-    work_pattern: data.work_pattern || '',
-    physical_activity: data.physical_activity || '',
-    chief_complaint: data.chief_complaint || '',
-    complaint_since_when: data.complaint_since_when || '',
-    complaint_audio: data.complaint_audio || '',
-    complaint_transcript: data.complaint_transcript || '',
-    complaint_region: data.complaint_region || '',
-    complaint_side: data.complaint_side || '',
-    episode_type: data.episode_type || '',
-    pain_score: typeof data.pain_score === 'number' ? data.pain_score : (parseInt(data.pain_score, 10) || 0),
-    medical_history: typeof data.medical_history === 'string' ? data.medical_history : JSON.stringify(data.medical_history || {}),
-    exam_data: typeof data.exam_data === 'string' ? data.exam_data : JSON.stringify(data.exam_data || {}),
-    investigation_attachments: typeof data.investigation_attachments === 'string' ? data.investigation_attachments : JSON.stringify(data.investigation_attachments || []),
-    therapy_plan: typeof data.therapy_plan === 'string' ? data.therapy_plan : JSON.stringify(data.therapy_plan || []),
-    therapy_precautions: data.therapy_precautions || '',
-    followup_records: typeof data.followup_records === 'string' ? data.followup_records : JSON.stringify(data.followup_records || []),
-    notes: data.notes || '',
+    full_name: data.full_name !== undefined ? data.full_name : (existing.full_name || ''),
+    preferred_name: data.preferred_name !== undefined ? data.preferred_name : (existing.preferred_name || ''),
+    dob: data.dob !== undefined ? data.dob : (existing.dob || ''),
+    age: data.age !== undefined ? (data.age ? parseInt(String(data.age), 10) : null) : (existing.age ?? null),
+    gender: data.gender !== undefined ? data.gender : (existing.gender || 'Not specified'),
+    mobile: data.mobile !== undefined ? data.mobile : (existing.mobile || ''),
+    email: data.email !== undefined ? data.email : (existing.email || ''),
+    address: data.address !== undefined ? data.address : (existing.address || ''),
+    preferred_language: data.preferred_language !== undefined ? data.preferred_language : (existing.preferred_language || 'Telugu'),
+    admission_date: data.admission_date !== undefined ? data.admission_date : (existing.admission_date || ''),
+    emergency_name: data.emergency_name !== undefined ? data.emergency_name : (existing.emergency_name || ''),
+    emergency_relationship: data.emergency_relationship !== undefined ? data.emergency_relationship : (existing.emergency_relationship || ''),
+    emergency_phone: data.emergency_phone !== undefined ? data.emergency_phone : (existing.emergency_phone || ''),
+    consultation_fee: data.consultation_fee !== undefined ? data.consultation_fee : (existing.consultation_fee || ''),
+    consultation_date: data.consultation_date !== undefined ? data.consultation_date : (existing.consultation_date || ''),
+    monthly_fee: data.monthly_fee !== undefined ? data.monthly_fee : (existing.monthly_fee || ''),
+    payment_records: data.payment_records !== undefined
+      ? (typeof data.payment_records === 'string' ? data.payment_records : JSON.stringify(data.payment_records || []))
+      : (typeof existing.payment_records === 'string' ? existing.payment_records : JSON.stringify(existing.payment_records || [])),
+    centre: data.centre !== undefined ? data.centre : (existing.centre || 'STY Vijayawada'),
+    assigned_therapist: data.assigned_therapist !== undefined ? data.assigned_therapist : (existing.assigned_therapist || 'Assigned on Assessment'),
+    referred_by: data.referred_by !== undefined ? data.referred_by : (existing.referred_by || ''),
+    status: (data.status !== undefined && data.status) ? data.status : (existing.status || 'Active'),
+    occupation: data.occupation !== undefined ? data.occupation : (existing.occupation || ''),
+    work_pattern: data.work_pattern !== undefined ? data.work_pattern : (existing.work_pattern || ''),
+    physical_activity: data.physical_activity !== undefined ? data.physical_activity : (existing.physical_activity || ''),
+    chief_complaint: data.chief_complaint !== undefined ? data.chief_complaint : (existing.chief_complaint || ''),
+    complaint_since_when: data.complaint_since_when !== undefined ? data.complaint_since_when : (existing.complaint_since_when || ''),
+    complaint_audio: data.complaint_audio !== undefined ? data.complaint_audio : (existing.complaint_audio || ''),
+    complaint_transcript: data.complaint_transcript !== undefined ? data.complaint_transcript : (existing.complaint_transcript || ''),
+    complaint_region: data.complaint_region !== undefined ? data.complaint_region : (existing.complaint_region || 'General / Spine'),
+    complaint_side: data.complaint_side !== undefined ? data.complaint_side : (existing.complaint_side || 'Not specified'),
+    episode_type: data.episode_type !== undefined ? data.episode_type : (existing.episode_type || 'First episode'),
+    pain_score: data.pain_score !== undefined
+      ? (typeof data.pain_score === 'number' ? data.pain_score : (parseInt(data.pain_score, 10) || 0))
+      : (existing.pain_score ?? 0),
+    medical_history: data.medical_history !== undefined
+      ? (typeof data.medical_history === 'string' ? data.medical_history : JSON.stringify(data.medical_history || {}))
+      : (typeof existing.medical_history === 'string' ? existing.medical_history : JSON.stringify(existing.medical_history || {})),
+    exam_data: data.exam_data !== undefined
+      ? (typeof data.exam_data === 'string' ? data.exam_data : JSON.stringify(data.exam_data || {}))
+      : (typeof existing.exam_data === 'string' ? existing.exam_data : JSON.stringify(existing.exam_data || {})),
+    investigation_attachments: data.investigation_attachments !== undefined
+      ? (typeof data.investigation_attachments === 'string' ? data.investigation_attachments : JSON.stringify(data.investigation_attachments || []))
+      : (typeof existing.investigation_attachments === 'string' ? existing.investigation_attachments : JSON.stringify(existing.investigation_attachments || [])),
+    therapy_plan: data.therapy_plan !== undefined
+      ? (typeof data.therapy_plan === 'string' ? data.therapy_plan : JSON.stringify(data.therapy_plan || []))
+      : (typeof existing.therapy_plan === 'string' ? existing.therapy_plan : JSON.stringify(existing.therapy_plan || [])),
+    therapy_precautions: data.therapy_precautions !== undefined ? data.therapy_precautions : (existing.therapy_precautions || ''),
+    followup_records: data.followup_records !== undefined
+      ? (typeof data.followup_records === 'string' ? data.followup_records : JSON.stringify(data.followup_records || []))
+      : (typeof existing.followup_records === 'string' ? existing.followup_records : JSON.stringify(existing.followup_records || [])),
+    notes: data.notes !== undefined ? data.notes : (existing.notes || ''),
     updated_at: now
   });
 

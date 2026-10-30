@@ -40,7 +40,7 @@ export const TopNav: React.FC<Props> = ({
     : `+91 ${displayMobile}`;
 
   return (
-    <header className="sticky top-0 z-30 h-18 bg-white border-b border-slate-200/90 px-4 sm:px-6 flex items-center justify-between gap-4">
+    <header className="sticky top-0 z-30 h-18 bg-white border-b border-slate-200/90 px-4 sm:px-6 flex items-center justify-between gap-4 print:hidden">
       {/* Left: Hamburger / Sandwich button */}
       <div className="flex items-center gap-3">
         <button

@@ -34,7 +34,17 @@ export interface MedicalHistory {
   abnormalSensationDetails: string;
   hasMotorWeakness: boolean;
   motorWeaknessDetails: string;
+  hasBowelBladderInvolvement: boolean;
+  bowelBladderDetails: string;
+  hasWeightLossFever: boolean;
+  weightLossFeverDetails: string;
+  hasGiddiness?: boolean;
+  giddinessDetails?: string;
+  hasHeadache?: boolean;
+  headacheDetails?: string;
   menstrualHistory: string;
+  previousEpisodes: string;
+  familyHistory: string;
 }
 
 export interface ExamData {
@@ -53,6 +63,11 @@ export interface ExamData {
   kneeVarusValgus: string;
   kneeFixedFlexion: string;
   kneeHyperextension: string;
+  kneeRangeOfMotion: string;
+  kneeTenderness: string;
+  kneeEffusion: string;
+  kneeStabilityTests: string;
+  extremityJointAssessment: string;
   investigations: string;
 }
 

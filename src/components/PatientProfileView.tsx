@@ -33,7 +33,8 @@ import {
   Check,
   X,
   ShieldAlert,
-  Sparkles
+  Sparkles,
+  Pencil
 } from 'lucide-react';
 import {
   Patient,
@@ -55,6 +56,7 @@ interface Props {
   onStatusChange: (id: number, newStatus: string) => Promise<void>;
   onUpdatePatient?: (updatedPatient: Patient) => Promise<void>;
   onDeleteRequest: (patient: Patient) => void;
+  onEditClick?: (section?: 'section1' | 'section2' | 'section3' | 'section4' | 'section5') => void;
 }
 
 export const PatientProfileView: React.FC<Props> = ({
@@ -62,7 +64,8 @@ export const PatientProfileView: React.FC<Props> = ({
   onBack,
   onStatusChange,
   onUpdatePatient,
-  onDeleteRequest
+  onDeleteRequest,
+  onEditClick
 }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'billing' | 'medical' | 'exam' | 'plan' | 'followup' | 'activity'>('overview');
   const [updatingStatus, setUpdatingStatus] = useState(false);
@@ -88,7 +91,13 @@ export const PatientProfileView: React.FC<Props> = ({
       abnormalSensationDetails: '',
       hasMotorWeakness: false,
       motorWeaknessDetails: '',
+      hasBowelBladderInvolvement: false,
+      bowelBladderDetails: '',
+      hasWeightLossFever: false,
+      weightLossFeverDetails: '',
       menstrualHistory: '',
+      previousEpisodes: '',
+      familyHistory: '',
       hypertension: { present: false, sinceWhen: '', pastReading: '', currentReading: '', medication: '' },
       diabetes: { present: false, sinceWhen: '', pastReading: '', currentReading: '', medication: '' },
       thyroid: { present: false, sinceWhen: '', pastReading: '', currentReading: '', medication: '' }
@@ -127,6 +136,11 @@ export const PatientProfileView: React.FC<Props> = ({
       kneeVarusValgus: '-',
       kneeFixedFlexion: '-',
       kneeHyperextension: '-',
+      kneeRangeOfMotion: '-',
+      kneeTenderness: '-',
+      kneeEffusion: '-',
+      kneeStabilityTests: '-',
+      extremityJointAssessment: '-',
       investigations: '-'
     };
 
@@ -149,24 +163,14 @@ export const PatientProfileView: React.FC<Props> = ({
     try {
       if (typeof patient.payment_records === 'string' && patient.payment_records.startsWith('[')) {
         const parsed = JSON.parse(patient.payment_records);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      } else if (Array.isArray(patient.payment_records) && patient.payment_records.length > 0) {
+        if (Array.isArray(parsed)) return parsed;
+      } else if (Array.isArray(patient.payment_records)) {
         return patient.payment_records;
       }
     } catch {
       // ignore
     }
-    // Default initial payment record if none exists yet
-    return [
-      {
-        id: `REC-${(patient.patient_id || '101').replace(/[^a-zA-Z0-9]/g, '')}-01`,
-        payment_date: patient.consultation_date || patient.admission_date || patient.created_at || new Date().toISOString().split('T')[0],
-        payment_method: 'UPI',
-        amount: Number(patient.monthly_fee) || Number(patient.consultation_fee) || 3500,
-        notes: 'Initial Consultation & Monthly Fee Payment',
-        status: 'Received'
-      }
-    ];
+    return [];
   };
 
   // Parse Investigations
@@ -183,7 +187,7 @@ export const PatientProfileView: React.FC<Props> = ({
     return [];
   };
 
-  // Parse Therapy Plan
+  // Parse Therapy Plan (not pre-configured; blank until entered by user)
   const parseTherapyPlan = (): WeeklyPractice[] => {
     try {
       if (typeof patient.therapy_plan === 'string' && patient.therapy_plan.startsWith('[')) {
@@ -194,53 +198,11 @@ export const PatientProfileView: React.FC<Props> = ({
     } catch {
       // ignore
     }
-
-    const isKnee = patient.complaint_region === 'Knee' || (patient.chief_complaint && patient.chief_complaint.toLowerCase().includes('knee'));
-
-    // Generate condition-tailored 12-week schedule if empty
-    const schedule: WeeklyPractice[] = [];
-    for (let i = 1; i <= 12; i++) {
-      const month = Math.ceil(i / 4);
-      if (isKnee) {
-        schedule.push({
-          week: i,
-          month,
-          theme: month === 1 ? 'Phase 1: Gentle Mobilization & Joint Decompression' : month === 2 ? 'Phase 2: Closed Kinetic Chain & Balance' : 'Phase 3: Functional Strength & Proprioception',
-          practices: i === 1
-            ? 'Chair-seated Sukshma Vyayama, gentle ankle pumps (Gulpha Naman), seated knee extension with heel slide.'
-            : i === 2
-            ? 'Isometric quad sets with towel roll under knee, seated leg lifts with 3s hold, supported Dandasana.'
-            : `Chair yoga knee therapy protocol week ${i}, quad strengthening with strap and yoga block.`,
-          pranayama: 'Diaphragmatic Breathing, Anulom Vilom (slow rhythmic breathing for HTN regulation)',
-          props: 'Sturdy chair with armrest, yoga mat, yoga strap, cotton bolster, 2 foam blocks',
-          duration: '35-45 mins / 5 days a week',
-          notes: `Knee osteoarthritis protocol week ${i}. Avoid deep knee flexion or floor sitting.`,
-          completed: i <= 2
-        });
-      } else {
-        schedule.push({
-          week: i,
-          month,
-          theme: month === 1 ? 'Phase 1: Alignment & Relief' : month === 2 ? 'Phase 2: Core Stability & Mobility' : 'Phase 3: Functional Strength & Maintenance',
-          practices: i === 1 ? 'Tadasana, gentle Sukshma Vyayama, supported Supta Padangusthasana with strap.' : `Progressive spinal decompression, therapeutic Asanas week ${i}.`,
-          pranayama: 'Deep Diaphragmatic Breathing, Anulom Vilom (5 mins)',
-          props: 'Yoga mat, cotton bolster, 2 foam blocks, strap',
-          duration: '45 mins / 5 days a week',
-          notes: `Clinical focus for week ${i}. Maintain breath awareness.`,
-          completed: i <= 2
-        });
-      }
-    }
-    return schedule;
+    return [];
   };
 
   const getInitialPrecautions = (): string => {
-    if (patient.therapy_precautions) return patient.therapy_precautions;
-    const isKnee = patient.complaint_region === 'Knee' || (patient.chief_complaint && patient.chief_complaint.toLowerCase().includes('knee'));
-    if (isKnee) {
-      return '• Strictly avoid sitting on the floor or folding knees deeply (Contraindicated: Vajrasana, Padmasana, deep squats).\n• Do not perform high-impact jogging, jumping, or fast unassisted stair descent.\n• All transitions from sitting to standing must use armrest or chair support.\n• Use bolster or towel roll under knees during supine postures to prevent knee hyperextension.\n• Maintain continuous rhythmic breathing; avoid breath holding (Kumbhaka) to prevent blood pressure spikes (Hypertension).\n• Apply warm fomentation or therapeutic herbal compress if mild stiffness occurs after morning practice.';
-    }
-    return '• Strictly avoid deep lumbar forward bending without knee support.\n• No jerky movements or sudden spinal twists.\n• Maintain slow rhythmic breathing; no Kumbhaka (breath retention).\n• Stop immediately if radiating pain or numbness is triggered.';
+    return patient.therapy_precautions || '';
   };
 
   // Parse Followup records
@@ -282,7 +244,7 @@ export const PatientProfileView: React.FC<Props> = ({
   const [showAddPayment, setShowAddPayment] = useState(false);
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
   const [paymentMethod, setPaymentMethod] = useState<'Cash' | 'UPI' | 'Card' | 'Bank Transfer' | 'Cheque'>('UPI');
-  const [paymentAmount, setPaymentAmount] = useState<number>(Number(patient.monthly_fee) || 3500);
+  const [paymentAmount, setPaymentAmount] = useState<number>(Number(patient.monthly_fee) || 0);
   const [paymentNotes, setPaymentNotes] = useState('Monthly Yoga Therapy Fee');
 
   // New Follow-up Form Modal/Inline state
@@ -328,7 +290,15 @@ export const PatientProfileView: React.FC<Props> = ({
       const recognition = new SpeechRecognition();
       recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.lang = 'en-IN';
+      
+      const prefLang = (patient.preferred_language || '').toLowerCase();
+      if (prefLang.includes('telugu')) {
+        recognition.lang = 'te-IN';
+      } else if (prefLang.includes('hindi')) {
+        recognition.lang = 'hi-IN';
+      } else {
+        recognition.lang = 'en-IN';
+      }
 
       recognition.onstart = () => {
         setIsRecording(true);
@@ -684,7 +654,16 @@ export const PatientProfileView: React.FC<Props> = ({
           </div>
 
           {/* Quick Action Buttons */}
-          <div className="flex items-center gap-2.5 self-start sm:self-center">
+          <div className="flex items-center gap-2.5 self-start sm:self-center flex-wrap">
+            <button
+              onClick={() => onEditClick?.('section1')}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#0C4A60] hover:bg-[#083344] transition-all shadow-xs cursor-pointer hover:shadow"
+              title="Edit patient demographics, medical history, physical examination, and 12-week therapy plan"
+            >
+              <Pencil className="w-3.5 h-3.5 text-amber-300" />
+              <span>Edit Patient</span>
+            </button>
+
             <button
               onClick={() => setShowPrintSheet(true)}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
@@ -869,18 +848,7 @@ export const PatientProfileView: React.FC<Props> = ({
                 </div>
               </div>
 
-              {/* Occupation & Work */}
-              <div className="flex items-center gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
-                  <Briefcase className="w-5 h-5" />
-                </div>
-                <div>
-                  <span className="text-[11px] font-medium text-slate-400 block">Occupation &amp; Pattern</span>
-                  <span className="text-sm font-semibold text-slate-900">
-                    {patient.occupation || 'Standard'} &bull; {patient.work_pattern || 'Regular activity'}
-                  </span>
-                </div>
-              </div>
+              {/* Occupation & Work removed */}
 
               {/* Residential Address */}
               <div className="flex items-center gap-3.5">
@@ -890,7 +858,7 @@ export const PatientProfileView: React.FC<Props> = ({
                 <div>
                   <span className="text-[11px] font-medium text-slate-400 block">Residential Address</span>
                   <span className="text-sm font-semibold text-slate-900">
-                    {patient.address || 'Address on file'}
+                    {patient.address || '-'}
                   </span>
                 </div>
               </div>
@@ -928,7 +896,7 @@ export const PatientProfileView: React.FC<Props> = ({
                 <div>
                   <span className="text-[11px] font-medium text-slate-400 block">Primary Mobile Number</span>
                   <span className="text-sm font-semibold text-slate-900 font-mono">
-                    {patient.mobile}
+                    {patient.mobile || '-'}
                   </span>
                 </div>
               </div>
@@ -947,7 +915,7 @@ export const PatientProfileView: React.FC<Props> = ({
                         {patient.emergency_name && ` (${patient.emergency_name}${patient.emergency_relationship ? ` - ${patient.emergency_relationship}` : ''})`}
                       </>
                     ) : (
-                      'None recorded'
+                      '-'
                     )}
                   </span>
                 </div>
@@ -961,7 +929,7 @@ export const PatientProfileView: React.FC<Props> = ({
                 <div>
                   <span className="text-[11px] font-medium text-slate-400 block">Email Address</span>
                   <span className="text-sm font-semibold text-slate-900">
-                    {patient.email || `${patient.patient_id.toLowerCase().replace(/[^a-z0-9]/g, '')}@stycare.in`}
+                    {patient.email || '-'}
                   </span>
                 </div>
               </div>
@@ -974,7 +942,7 @@ export const PatientProfileView: React.FC<Props> = ({
                 <div>
                   <span className="text-[11px] font-medium text-slate-400 block">Assigned Therapist</span>
                   <span className="text-sm font-semibold text-slate-900">
-                    {patient.assigned_therapist ? patient.assigned_therapist.replace(/^Dr\.\s*/i, '') : 'Surya Teja'}
+                    {patient.assigned_therapist ? patient.assigned_therapist.replace(/^Dr\.\s*/i, '') : '-'}
                   </span>
                 </div>
               </div>
@@ -987,7 +955,7 @@ export const PatientProfileView: React.FC<Props> = ({
                 <div>
                   <span className="text-[11px] font-medium text-slate-400 block">Referred By</span>
                   <span className="text-sm font-semibold text-slate-900">
-                    {patient.referred_by || 'Self / Direct'}
+                    {patient.referred_by || '-'}
                   </span>
                 </div>
               </div>
@@ -1025,7 +993,7 @@ export const PatientProfileView: React.FC<Props> = ({
             <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
               <span className="text-xs font-semibold text-slate-500 block mb-1">CONSULTATION FEE</span>
               <span className="text-xl font-bold text-[#0C4A60]">
-                ₹{patient.consultation_fee ? Number(patient.consultation_fee).toLocaleString('en-IN') : '500'}
+                ₹{patient.consultation_fee != null && patient.consultation_fee !== '' ? Number(patient.consultation_fee).toLocaleString('en-IN') : '0'}
               </span>
               <span className="text-[11px] text-slate-500 block mt-1">
                 Consulted on: {formatIndianDate(patient.consultation_date) || 'At admission'}
@@ -1035,7 +1003,7 @@ export const PatientProfileView: React.FC<Props> = ({
             <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
               <span className="text-xs font-semibold text-slate-500 block mb-1">MONTHLY THERAPY FEE</span>
               <span className="text-xl font-bold text-[#0C4A60]">
-                ₹{patient.monthly_fee ? Number(patient.monthly_fee).toLocaleString('en-IN') : '3,500'}
+                ₹{patient.monthly_fee != null && patient.monthly_fee !== '' ? Number(patient.monthly_fee).toLocaleString('en-IN') : '0'}
               </span>
               <span className="text-[11px] text-slate-500 block mt-1">Per month subscription</span>
             </div>
@@ -1051,108 +1019,120 @@ export const PatientProfileView: React.FC<Props> = ({
             </div>
           </div>
 
-          {/* Payment Details & Manual Entry Card */}
-          <div className="bg-white rounded-lg p-6 border border-slate-200/80 shadow-xs">
+          {/* Payment Details & Receipts Card */}
+          <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-4 border-b border-slate-100 gap-3">
               <div>
                 <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                   <CreditCard className="w-4 h-4 text-[#0C4A60]" />
-                  <span>Manual Payment Details &amp; Receipts</span>
+                  <span>Payment Details &amp; Receipts Ledger</span>
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Record and verify payments entered manually by authorized staff.
+                  Verified billing receipts and consultation collections on file. Record new manual payment transactions below.
                 </p>
               </div>
 
               <button
                 type="button"
-                onClick={() => setShowAddPayment(!showAddPayment)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-white bg-[#0C4A60] hover:bg-[#083344] transition-colors cursor-pointer self-start sm:self-auto"
+                onClick={() => setShowAddPayment((prev) => !prev)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#0C4A60] hover:bg-[#083344] text-white text-xs font-bold transition-all shadow-xs cursor-pointer hover:shadow shrink-0"
               >
-                <Plus className="w-3.5 h-3.5" />
-                <span>{showAddPayment ? 'Cancel' : 'Record Manual Payment'}</span>
+                <Plus className="w-3.5 h-3.5 text-amber-300" />
+                <span>{showAddPayment ? 'Close Payment Form' : 'Record Manual Payment'}</span>
               </button>
             </div>
 
-            {/* Manual Payment Input Form (Staff Entry) */}
+            {/* Collapsible Manual Payment Form */}
             {showAddPayment && (
-              <form onSubmit={handleAddPayment} className="p-4 rounded-xl bg-slate-50 border border-slate-200 mb-6 space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-800">New Payment Entry (Authorized Staff)</span>
-                  <span className="text-[11px] text-slate-500">All fields saved directly to case record</span>
+              <form onSubmit={handleAddPayment} className="mb-6 p-4.5 rounded-2xl bg-sky-50/60 border border-sky-100 space-y-4 animate-in fade-in duration-150">
+                <div className="flex items-center justify-between border-b border-sky-100 pb-2.5">
+                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <CreditCard className="w-4 h-4 text-[#0C4A60]" />
+                    Record Manual Payment Entry
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddPayment(false)}
+                    className="p-1 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-white transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3.5 text-xs">
                   <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-[11px] font-medium text-slate-600">Payment Date *</label>
-                      {paymentDate && (
-                        <span className="text-[10px] font-mono font-bold text-[#0C4A60] bg-sky-50 px-1.5 py-0.2 rounded border border-sky-200">
-                          {formatIndianDate(paymentDate)}
-                        </span>
-                      )}
-                    </div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Payment Amount (₹) <span className="text-rose-500">*</span>
+                    </label>
                     <input
-                      type="date"
-                      value={paymentDate}
-                      onChange={(e) => setPaymentDate(e.target.value)}
+                      type="number"
                       required
-                      className="w-full text-xs rounded-lg border border-slate-300 p-2 bg-white"
+                      min="1"
+                      placeholder="Enter Amount (₹)"
+                      value={paymentAmount || ''}
+                      onChange={(e) => setPaymentAmount(Number(e.target.value))}
+                      className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 font-mono font-bold text-[#0C4A60] focus:ring-2 focus:ring-[#0C4A60]/20 focus:border-[#0C4A60]"
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-600 block mb-1">Payment Method *</label>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Payment Date <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={paymentDate}
+                      onChange={(e) => setPaymentDate(e.target.value)}
+                      className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#0C4A60]/20 focus:border-[#0C4A60]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Payment Method <span className="text-rose-500">*</span>
+                    </label>
                     <select
                       value={paymentMethod}
                       onChange={(e) => setPaymentMethod(e.target.value as any)}
-                      className="w-full text-xs rounded-lg border border-slate-300 p-2 bg-white"
+                      className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 font-semibold text-slate-800 focus:ring-2 focus:ring-[#0C4A60]/20 focus:border-[#0C4A60]"
                     >
-                      <option value="Cash">Cash</option>
-                      <option value="UPI">UPI (Google Pay / PhonePe / Paytm)</option>
+                      <option value="UPI">UPI / GPay / PhonePe</option>
+                      <option value="Cash">Cash Payment</option>
                       <option value="Card">Credit / Debit Card</option>
-                      <option value="Bank Transfer">Bank Transfer (NEFT / IMPS)</option>
+                      <option value="Bank Transfer">Bank Transfer / NEFT</option>
                       <option value="Cheque">Cheque</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-medium text-slate-600 block mb-1">Amount Paid (₹) *</label>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Notes / Reference
+                    </label>
                     <input
-                      type="number"
-                      value={paymentAmount}
-                      onChange={(e) => setPaymentAmount(Number(e.target.value))}
-                      placeholder="e.g. 3500"
-                      required
-                      className="w-full text-xs rounded-lg border border-slate-300 p-2 bg-white font-mono font-semibold"
+                      type="text"
+                      placeholder="e.g. Consultation or monthly fee"
+                      value={paymentNotes}
+                      onChange={(e) => setPaymentNotes(e.target.value)}
+                      className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#0C4A60]/20 focus:border-[#0C4A60]"
                     />
                   </div>
                 </div>
 
-                <div>
-                  <label className="text-[11px] font-medium text-slate-600 block mb-1">Payment Notes / Transaction ID</label>
-                  <input
-                    type="text"
-                    value={paymentNotes}
-                    onChange={(e) => setPaymentNotes(e.target.value)}
-                    placeholder="e.g. UPI Ref #89283921 / Monthly Yoga Therapy Session Batch"
-                    className="w-full text-xs rounded-lg border border-slate-300 p-2 bg-white"
-                  />
-                </div>
-
-                <div className="flex justify-end gap-2 pt-2">
+                <div className="flex justify-end gap-2 pt-2 border-t border-sky-100">
                   <button
                     type="button"
                     onClick={() => setShowAddPayment(false)}
-                    className="px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-medium text-slate-600 hover:bg-white"
+                    className="px-3.5 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 text-xs font-semibold hover:bg-slate-50 transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-1.5 rounded-lg bg-[#0C4A60] text-xs font-semibold text-white hover:bg-[#083344]"
+                    className="px-4 py-1.5 rounded-lg bg-[#0C4A60] hover:bg-[#083344] text-white text-xs font-bold shadow-xs flex items-center gap-1.5 transition-colors"
                   >
-                    Save Payment Receipt
+                    <Check className="w-3.5 h-3.5 text-amber-300" />
+                    <span>Save Payment Entry</span>
                   </button>
                 </div>
               </form>
@@ -1163,7 +1143,7 @@ export const PatientProfileView: React.FC<Props> = ({
               <div className="text-center py-8 bg-slate-50 rounded-xl border border-dashed border-slate-200">
                 <CreditCard className="w-8 h-8 text-slate-400 mx-auto mb-2" />
                 <p className="text-xs font-medium text-slate-600">No payment receipts recorded yet.</p>
-                <p className="text-[11px] text-slate-400 mt-0.5">Click "Record Manual Payment" above to record cash, UPI or card collections.</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">Click "Record Manual Payment" above to add a new transaction.</p>
               </div>
             ) : (
               <div className="overflow-x-auto no-scrollbar border border-slate-200/80 rounded-md">
@@ -1227,69 +1207,23 @@ export const PatientProfileView: React.FC<Props> = ({
                 <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
                   Pain Score: {patient.pain_score ?? 0} / 10
                 </span>
-
-                {/* Voice Record / Speech button */}
-                <button
-                  type="button"
-                  onClick={isRecording ? stopRecording : startRecording}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                    isRecording
-                      ? 'bg-rose-600 text-white animate-pulse shadow-md'
-                      : 'bg-sky-50 text-[#0C4A60] hover:bg-sky-100 border border-sky-200'
-                  }`}
-                >
-                  {isRecording ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
-                  <span>{isRecording ? 'Listening / Stop' : 'Record Audio'}</span>
-                </button>
               </div>
             </div>
 
-            {/* Chief Complaint Description Box (Editable) */}
+            {/* Chief Complaint Description Box (Read-Only) */}
             <div className="mb-4 p-4 rounded-xl bg-[#0C4A60]/5 border border-[#0C4A60]/15 space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-[#0C4A60] flex items-center gap-1.5 uppercase tracking-wide">
-                  <FileText className="w-3.5 h-3.5" />
-                  <span>Chief Complaint Description</span>
-                </label>
-                {isEditingComplaint ? (
-                  <button
-                    type="button"
-                    onClick={handleSaveChiefComplaint}
-                    disabled={isSaving}
-                    className="inline-flex items-center gap-1 text-xs text-[#0C4A60] font-bold hover:underline cursor-pointer"
-                  >
-                    <Save className="w-3.5 h-3.5" />
-                    <span>Save Description</span>
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setIsEditingComplaint(true)}
-                    className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-800 cursor-pointer"
-                  >
-                    <Edit className="w-3.5 h-3.5" />
-                    <span>Edit Description</span>
-                  </button>
-                )}
-              </div>
+              <label className="text-xs font-bold text-[#0C4A60] flex items-center gap-1.5 uppercase tracking-wide">
+                <FileText className="w-3.5 h-3.5" />
+                <span>Chief Complaint Description</span>
+              </label>
 
-              {isEditingComplaint ? (
-                <textarea
-                  rows={3}
-                  value={chiefComplaintText}
-                  onChange={(e) => setChiefComplaintText(e.target.value)}
-                  className="w-full text-xs sm:text-sm p-3 rounded-lg border border-[#0C4A60] focus:ring-1 focus:ring-[#0C4A60] bg-white text-slate-900 leading-relaxed font-medium"
-                  placeholder="Enter Chief Complaint Description..."
-                />
-              ) : (
-                <p className="text-xs sm:text-sm font-semibold text-slate-900 leading-relaxed whitespace-pre-line">
-                  {chiefComplaintText || patient.chief_complaint ? (
-                    chiefComplaintText || patient.chief_complaint
-                  ) : (
-                    <span className="text-slate-400 italic font-normal">No chief complaint description recorded. You can click "Edit Description" to add one.</span>
-                  )}
-                </p>
-              )}
+              <p className="text-xs sm:text-sm font-semibold text-slate-900 leading-relaxed whitespace-pre-line">
+                {patient.chief_complaint || chiefComplaintText ? (
+                  patient.chief_complaint || chiefComplaintText
+                ) : (
+                  <span className="text-slate-400 italic font-normal">No chief complaint description recorded. Use the "Edit Patient" button to add clinical details.</span>
+                )}
+              </p>
             </div>
 
             {/* Episode details row */}
@@ -1329,55 +1263,27 @@ export const PatientProfileView: React.FC<Props> = ({
                   </div>
                   <div>
                     <span className="text-xs font-bold text-slate-900 block">Patient Voice Recording</span>
-                    <span className="text-[11px] text-slate-500">Audio captured during intake session</span>
+                    <span className="text-[11px] text-slate-500">Audio captured during consultation</span>
                   </div>
                 </div>
                 <audio controls src={patient.complaint_audio} className="h-8 max-w-[240px]" />
               </div>
             )}
 
-            {/* Generated & Reviewed Text Transcript */}
+            {/* Speech Transcript (Read-Only) */}
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                  <FileText className="w-3.5 h-3.5 text-slate-500" />
-                  <span>Speech-to-Text Transcript (Reviewed &amp; Editable)</span>
-                </label>
-                {isEditingTranscript ? (
-                  <button
-                    type="button"
-                    onClick={handleSaveTranscript}
-                    disabled={isSaving}
-                    className="inline-flex items-center gap-1 text-xs text-[#0C4A60] font-bold hover:underline"
-                  >
-                    <Save className="w-3.5 h-3.5" />
-                    <span>Save Transcript</span>
-                  </button>
+              <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                <FileText className="w-3.5 h-3.5 text-slate-500" />
+                <span>Speech-to-Text Transcript</span>
+              </label>
+
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm text-slate-800 leading-relaxed font-sans">
+                {patient.complaint_transcript || transcriptText ? (
+                  `"${patient.complaint_transcript || transcriptText}"`
                 ) : (
-                  <button
-                    type="button"
-                    onClick={() => setIsEditingTranscript(true)}
-                    className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-800"
-                  >
-                    <Edit className="w-3.5 h-3.5" />
-                    <span>Edit Transcript</span>
-                  </button>
+                  <span className="text-slate-400 italic">No audio transcript recorded. Use "Edit Patient" to record voice narrative or update symptoms.</span>
                 )}
               </div>
-
-              {isEditingTranscript ? (
-                <textarea
-                  rows={4}
-                  value={transcriptText}
-                  onChange={(e) => setTranscriptText(e.target.value)}
-                  className="w-full text-xs sm:text-sm p-3.5 rounded-xl border border-[#0C4A60] focus:ring-1 focus:ring-[#0C4A60] bg-white leading-relaxed"
-                  placeholder="Transcript of the patient explaining symptoms..."
-                />
-              ) : (
-                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm text-slate-800 leading-relaxed font-sans">
-                  {transcriptText ? `"${transcriptText}"` : <span className="text-slate-400 italic">No audio transcript recorded. You can click "Record Audio" or "Edit Transcript" above.</span>}
-                </div>
-              )}
             </div>
           </div>
 
@@ -1587,10 +1493,55 @@ export const PatientProfileView: React.FC<Props> = ({
               </div>
 
               <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60">
+                <span className="font-semibold text-slate-800 block mb-0.5">H/o Abnormal Sensation:</span>
+                <span className={medHistory.hasAbnormalSensation ? 'text-rose-700 font-semibold' : 'text-slate-500'}>
+                  {medHistory.hasAbnormalSensation ? `Present: ${medHistory.abnormalSensationDetails}` : 'Absent'}
+                </span>
+              </div>
+
+              <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60">
                 <span className="font-semibold text-slate-800 block mb-0.5">H/o Motor Weakness:</span>
                 <span className={medHistory.hasMotorWeakness ? 'text-rose-700 font-bold' : 'text-slate-500'}>
                   {medHistory.hasMotorWeakness ? `Present: ${medHistory.motorWeaknessDetails}` : 'Absent'}
                 </span>
+              </div>
+
+              <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60">
+                <span className="font-semibold text-slate-800 block mb-0.5">H/o Bowel / Bladder involvement:</span>
+                <span className={medHistory.hasBowelBladderInvolvement ? 'text-rose-700 font-semibold' : 'text-slate-500'}>
+                  {medHistory.hasBowelBladderInvolvement ? `Present: ${medHistory.bowelBladderDetails}` : 'Absent'}
+                </span>
+              </div>
+
+              <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60">
+                <span className="font-semibold text-slate-800 block mb-0.5">H/o Giddiness / Dizziness:</span>
+                <span className={medHistory.hasGiddiness ? 'text-rose-700 font-semibold' : 'text-slate-500'}>
+                  {medHistory.hasGiddiness ? `Present: ${medHistory.giddinessDetails}` : 'Absent'}
+                </span>
+              </div>
+
+              <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60">
+                <span className="font-semibold text-slate-800 block mb-0.5">H/o Headache:</span>
+                <span className={medHistory.hasHeadache ? 'text-rose-700 font-semibold' : 'text-slate-500'}>
+                  {medHistory.hasHeadache ? `Present: ${medHistory.headacheDetails}` : 'Absent'}
+                </span>
+              </div>
+
+              <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60">
+                <span className="font-semibold text-slate-800 block mb-0.5">H/o Weight Loss / Fever:</span>
+                <span className={medHistory.hasWeightLossFever ? 'text-rose-700 font-semibold' : 'text-slate-500'}>
+                  {medHistory.hasWeightLossFever ? `Present: ${medHistory.weightLossFeverDetails}` : 'Absent'}
+                </span>
+              </div>
+
+              <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60">
+                <span className="font-semibold text-slate-800 block mb-0.5">Previous Similar Episodes:</span>
+                <span className="text-slate-700 font-medium">{medHistory.previousEpisodes || '-'}</span>
+              </div>
+
+              <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60">
+                <span className="font-semibold text-slate-800 block mb-0.5">Family Medical History:</span>
+                <span className="text-slate-700 font-medium">{medHistory.familyHistory || '-'}</span>
               </div>
 
               <div className="md:col-span-2 p-3.5 rounded-xl border border-slate-200 bg-slate-50/60">
@@ -1660,20 +1611,58 @@ export const PatientProfileView: React.FC<Props> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <div className="p-3.5 border border-slate-200 rounded-xl bg-white space-y-1">
-                <span className="text-slate-400 block text-[11px] font-medium">Straight Leg Raise (SLR):</span>
-                <div className="font-semibold text-slate-900 text-xs space-y-0.5">
-                  <div>Left: {exam.slrLeft || '-'}</div>
-                  <div>Right: {exam.slrRight || '-'}</div>
+            <div className="p-3.5 border border-slate-200 rounded-xl bg-white space-y-1 mt-4">
+              <span className="text-slate-400 block text-[11px] font-medium">Straight Leg Raise (SLR):</span>
+              <div className="font-semibold text-slate-900 text-xs space-y-0.5">
+                <div>Left: {exam.slrLeft || '-'}</div>
+                <div>Right: {exam.slrRight || '-'}</div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs mt-6">
+              <h3 className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
+                <Activity className="w-4 h-4 text-[#0C4A60]" />
+                <span>Knee Biometrics &amp; Alignment</span>
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+                <div className="p-3 border border-slate-200 rounded-xl bg-slate-50/50">
+                  <span className="text-slate-500 block text-[10px] uppercase font-bold mb-1">Alignment</span>
+                  <span className="font-semibold text-slate-900">{exam.kneeVarusValgus || 'Normal'}</span>
+                </div>
+                <div className="p-3 border border-slate-200 rounded-xl bg-slate-50/50">
+                  <span className="text-slate-500 block text-[10px] uppercase font-bold mb-1">Fixed Flexion</span>
+                  <span className="font-semibold text-slate-900">{exam.kneeFixedFlexion || 'Nil'}</span>
+                </div>
+                <div className="p-3 border border-slate-200 rounded-xl bg-slate-50/50">
+                  <span className="text-slate-500 block text-[10px] uppercase font-bold mb-1">Hyperextension</span>
+                  <span className="font-semibold text-slate-900">{exam.kneeHyperextension || 'Nil'}</span>
+                </div>
+                <div className="p-3 border border-slate-200 rounded-xl bg-slate-50/50">
+                  <span className="text-slate-500 block text-[10px] uppercase font-bold mb-1">Range of Motion</span>
+                  <span className="font-semibold text-slate-900">{exam.kneeRangeOfMotion || '-'}</span>
+                </div>
+                <div className="p-3 border border-slate-200 rounded-xl bg-slate-50/50">
+                  <span className="text-slate-500 block text-[10px] uppercase font-bold mb-1">Joint Tenderness</span>
+                  <span className="font-semibold text-slate-900">{exam.kneeTenderness || '-'}</span>
+                </div>
+                <div className="p-3 border border-slate-200 rounded-xl bg-slate-50/50">
+                  <span className="text-slate-500 block text-[10px] uppercase font-bold mb-1">Joint Effusion</span>
+                  <span className="font-semibold text-slate-900">{exam.kneeEffusion || '-'}</span>
+                </div>
+                <div className="p-3 border border-slate-200 rounded-xl bg-slate-50/50 sm:col-span-2">
+                  <span className="text-slate-500 block text-[10px] uppercase font-bold mb-1">Stability / Special Tests</span>
+                  <span className="font-semibold text-slate-900">{exam.kneeStabilityTests || '-'}</span>
                 </div>
               </div>
-              <div className="p-3.5 border border-slate-200 rounded-xl bg-white space-y-1">
-                <span className="text-slate-400 block text-[11px] font-medium">Knee Biomechanics &amp; Alignment:</span>
-                <div className="font-semibold text-slate-900 text-xs space-y-0.5">
-                  <div>Alignment: {exam.kneeVarusValgus || 'Normal'}</div>
-                  <div>Flexion: {exam.kneeFixedFlexion || 'Nil'}</div>
-                </div>
+            </div>
+
+            <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs mt-6">
+              <h3 className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
+                <Stethoscope className="w-4 h-4 text-[#0C4A60]" />
+                <span>Extremity Joint Assessment</span>
+              </h3>
+              <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-900">
+                {exam.extremityJointAssessment || 'No joint assessment documented.'}
               </div>
             </div>
           </div>
@@ -1865,36 +1854,27 @@ export const PatientProfileView: React.FC<Props> = ({
             </div>
           )}
 
-          {/* Precautions & Contraindications Section (Required by doc) */}
+          {/* Precautions & Contraindications Section (Read-Only) */}
           <div className="bg-amber-50/60 rounded-2xl p-6 border border-amber-200 shadow-xs">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 mb-3 border-b border-amber-200/60 gap-3">
+            <div className="flex items-center justify-between pb-3 mb-3 border-b border-amber-200/60">
               <h3 className="text-sm font-bold text-amber-900 flex items-center gap-2">
                 <ShieldAlert className="w-5 h-5 text-amber-700" />
                 <span>Therapy Precautions &amp; Clinical Contraindications</span>
               </h3>
-              <button
-                type="button"
-                onClick={handleSavePrecautions}
-                disabled={isSaving}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-700 text-white text-xs font-semibold hover:bg-amber-800 transition-colors cursor-pointer self-start sm:self-auto"
-              >
-                <Save className="w-3.5 h-3.5" />
-                <span>Save Precautions</span>
-              </button>
             </div>
-            <textarea
-              rows={4}
-              value={precautionsText}
-              onChange={(e) => setPrecautionsText(e.target.value)}
-              className="w-full text-xs sm:text-sm p-3.5 rounded-xl border border-amber-300 bg-white text-slate-800 font-medium leading-relaxed focus:ring-1 focus:ring-amber-500"
-              placeholder="Record movement restrictions, contraindications, and handling guidance..."
-            />
-            <p className="text-[11px] text-amber-800/80 mt-1.5">
-              Highlight all practices to be avoided based on neurological testing and MRI diagnosis.
+            <div className="w-full text-xs sm:text-sm p-4 rounded-xl border border-amber-200 bg-white text-slate-800 font-medium leading-relaxed whitespace-pre-line">
+              {patient.therapy_precautions || precautionsText ? (
+                patient.therapy_precautions || precautionsText
+              ) : (
+                <span className="text-slate-400 italic">No specific therapy precautions recorded yet. Use the "Edit Patient" button above to document contraindications.</span>
+              )}
+            </div>
+            <p className="text-[11px] text-amber-800/80 mt-2">
+              Contraindicated movements and clinical precautions based on patient's neurological and physical assessment.
             </p>
           </div>
 
-          {/* Three-Month Practice Plan Week-by-Week (Weeks 1 to 12) */}
+          {/* Three-Month Practice Plan Week-by-Week (Weeks 1 to 12 - Read-Only) */}
           <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-5 border-b border-slate-100 gap-3">
               <div>
@@ -1908,113 +1888,131 @@ export const PatientProfileView: React.FC<Props> = ({
               </div>
 
               {/* Month Selector Tabs */}
-              <div className="inline-flex rounded-xl bg-slate-100 p-1 text-xs font-semibold">
+              {therapySchedule.length > 0 && (
+                <div className="inline-flex rounded-xl bg-slate-100 p-1 text-xs font-semibold">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedMonth(1)}
+                    className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                      selectedMonth === 1
+                        ? 'bg-white text-[#0C4A60] shadow-xs font-bold'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    Month 1 (W1 - W4)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedMonth(2)}
+                    className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                      selectedMonth === 2
+                        ? 'bg-white text-[#0C4A60] shadow-xs font-bold'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    Month 2 (W5 - W8)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedMonth(3)}
+                    className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                      selectedMonth === 3
+                        ? 'bg-white text-[#0C4A60] shadow-xs font-bold'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    Month 3 (W9 - W12)
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Weeks List or Empty State */}
+            {therapySchedule.length === 0 ? (
+              <div className="text-center py-10 px-4 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                <Activity className="w-10 h-10 text-slate-400 mx-auto mb-3" />
+                <h4 className="text-sm font-bold text-slate-800">No 12-Week Therapy Plan Configured</h4>
+                <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+                  Therapy schedules are not pre-configured. Use the "Edit Patient" button to record customized week-by-week practices, pranayama, and therapeutic props for this patient.
+                </p>
                 <button
                   type="button"
-                  onClick={() => setSelectedMonth(1)}
-                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                    selectedMonth === 1
-                      ? 'bg-white text-[#0C4A60] shadow-xs font-bold'
-                      : 'text-slate-500 hover:text-slate-800'
-                  }`}
+                  onClick={() => onEditClick?.('section5')}
+                  className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#0C4A60] hover:bg-[#083344] transition-colors cursor-pointer shadow-xs"
                 >
-                  Month 1 (W1 - W4)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedMonth(2)}
-                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                    selectedMonth === 2
-                      ? 'bg-white text-[#0C4A60] shadow-xs font-bold'
-                      : 'text-slate-500 hover:text-slate-800'
-                  }`}
-                >
-                  Month 2 (W5 - W8)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedMonth(3)}
-                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                    selectedMonth === 3
-                      ? 'bg-white text-[#0C4A60] shadow-xs font-bold'
-                      : 'text-slate-500 hover:text-slate-800'
-                  }`}
-                >
-                  Month 3 (W9 - W12)
+                  <Pencil className="w-3.5 h-3.5 text-amber-300" />
+                  <span>Configure 12-Week Plan</span>
                 </button>
               </div>
-            </div>
-
-            {/* Weeks List */}
-            <div className="space-y-4">
-              {therapySchedule
-                .filter((w) => w.month === selectedMonth)
-                .map((week, idx) => {
-                  const currentWeekNum = week.weekNumber || week.week || (idx + 1);
-                  return (
-                    <div
-                      key={currentWeekNum}
-                      className={`p-4 rounded-xl border transition-all ${
-                        week.completed
-                          ? 'border-emerald-200 bg-emerald-50/30'
-                          : 'border-slate-200 bg-slate-50/50 hover:bg-slate-50'
-                      }`}
-                    >
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2 mb-2 border-b border-slate-200/60 gap-2">
-                        <div className="flex items-center gap-2.5">
-                          <span className="w-7 h-7 rounded-lg bg-[#0C4A60] text-white flex items-center justify-center font-bold text-xs">
-                            W{currentWeekNum}
-                          </span>
-                          <div>
-                            <span className="text-xs font-bold text-slate-900 block">
-                              Week {currentWeekNum}: {week.theme || week.title}
+            ) : (
+              <div className="space-y-4">
+                {therapySchedule
+                  .filter((w) => w.month === selectedMonth)
+                  .map((week, idx) => {
+                    const currentWeekNum = week.weekNumber || week.week || (idx + 1);
+                    return (
+                      <div
+                        key={currentWeekNum}
+                        className={`p-4 rounded-xl border transition-all ${
+                          week.completed
+                            ? 'border-emerald-200 bg-emerald-50/30'
+                            : 'border-slate-200 bg-slate-50/50'
+                        }`}
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2 mb-2 border-b border-slate-200/60 gap-2">
+                          <div className="flex items-center gap-2.5">
+                            <span className="w-7 h-7 rounded-lg bg-[#0C4A60] text-white flex items-center justify-center font-bold text-xs">
+                              W{currentWeekNum}
                             </span>
-                            <span className="text-[11px] text-slate-500">{week.duration || week.frequencyDuration}</span>
+                            <div>
+                              <span className="text-xs font-bold text-slate-900 block">
+                                Week {currentWeekNum}: {week.theme || week.title || `Week ${currentWeekNum} Protocol`}
+                              </span>
+                              <span className="text-[11px] text-slate-500">{week.duration || week.frequencyDuration || '45 mins / session'}</span>
+                            </div>
                           </div>
+
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold ${
+                              week.completed
+                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                : 'bg-slate-100 text-slate-600 border border-slate-200'
+                            }`}
+                          >
+                            {week.completed ? <Check className="w-3 h-3 text-emerald-700" /> : null}
+                            <span>{week.completed ? 'Completed' : 'Planned'}</span>
+                          </span>
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={() => handleToggleWeekComplete(currentWeekNum)}
-                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold cursor-pointer ${
-                            week.completed
-                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                              : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
-                          }`}
-                        >
-                          <Check className="w-3.5 h-3.5" />
-                          <span>{week.completed ? 'Completed' : 'Mark as Done'}</span>
-                        </button>
-                      </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs mt-2">
+                          <div className="p-2.5 rounded-lg bg-white border border-slate-200">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">
+                              Asanas &amp; Physical Practices
+                            </span>
+                            <p className="text-slate-800 font-medium">{week.practices || 'Not specified'}</p>
+                          </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs mt-2">
-                      <div className="p-2.5 rounded-lg bg-white border border-slate-200">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">
-                          Asanas &amp; Physical Practices
-                        </span>
-                        <p className="text-slate-800 font-medium">{week.practices}</p>
-                      </div>
+                          <div className="p-2.5 rounded-lg bg-white border border-slate-200">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">
+                              Pranayama &amp; Breathwork
+                            </span>
+                            <p className="text-slate-800 font-medium">{week.pranayama || 'Not specified'}</p>
+                          </div>
 
-                      <div className="p-2.5 rounded-lg bg-white border border-slate-200">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">
-                          Pranayama &amp; Breathwork
-                        </span>
-                        <p className="text-slate-800 font-medium">{week.pranayama}</p>
+                          <div className="p-2.5 rounded-lg bg-white border border-slate-200">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">
+                              Therapeutic Props &amp; Notes
+                            </span>
+                            <p className="text-slate-800 font-medium">
+                              {week.props || 'Standard'} {week.notes ? `• ${week.notes}` : ''}
+                            </p>
+                          </div>
+                        </div>
                       </div>
-
-                      <div className="p-2.5 rounded-lg bg-white border border-slate-200">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">
-                          Therapeutic Props &amp; Notes
-                        </span>
-                        <p className="text-slate-800 font-medium">
-                          {week.props} &bull; <span className="text-slate-600">{week.notes}</span>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                    );
+                  })}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -2247,6 +2245,16 @@ export const PatientProfileView: React.FC<Props> = ({
           isModalPreview={true}
           onClose={() => setShowPrintSheet(false)}
         />
+      )}
+
+      {/* Background Multi-page Print Document Fallback (active on direct Ctrl+P) */}
+      {!showPrintSheet && (
+        <div className="hidden print:block">
+          <ClinicalCaseSheetDocument
+            patient={patient}
+            isModalPreview={false}
+          />
+        </div>
       )}
     </div>
   );

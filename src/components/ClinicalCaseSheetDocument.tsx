@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import {
   Printer,
+  Download,
   X,
   Building2,
   Calendar,
@@ -55,7 +58,17 @@ export const ClinicalCaseSheetDocument: React.FC<Props> = ({
     abnormalSensationDetails: '',
     hasMotorWeakness: false,
     motorWeaknessDetails: '',
-    menstrualHistory: ''
+    hasBowelBladderInvolvement: false,
+    bowelBladderDetails: '',
+    hasWeightLossFever: false,
+    weightLossFeverDetails: '',
+    hasGiddiness: false,
+    giddinessDetails: '',
+    hasHeadache: false,
+    headacheDetails: '',
+    menstrualHistory: '',
+    previousEpisodes: '',
+    familyHistory: ''
   };
 
   try {
@@ -83,6 +96,11 @@ export const ClinicalCaseSheetDocument: React.FC<Props> = ({
     kneeVarusValgus: '',
     kneeFixedFlexion: '',
     kneeHyperextension: '',
+    kneeRangeOfMotion: '',
+    kneeTenderness: '',
+    kneeEffusion: '',
+    kneeStabilityTests: '',
+    extremityJointAssessment: '',
     investigations: ''
   };
 
@@ -172,12 +190,53 @@ export const ClinicalCaseSheetDocument: React.FC<Props> = ({
 
   const totalPaid = paymentsList.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
 
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+
   const handlePrint = () => {
     window.print();
   };
 
+  const handleDownloadPdf = async () => {
+    const element = document.getElementById('clinical-case-sheet-document');
+    if (!element) return;
+    setDownloadingPdf(true);
+    try {
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        windowWidth: 1200
+      });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pageWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      pdf.save(`STY_CaseSheet_${patient.patient_id || 'Patient'}.pdf`);
+    } catch (err) {
+      console.error('Failed to generate PDF', err);
+      window.print();
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
+
   const documentContent = (
-    <div className="clinical-case-sheet-print bg-white text-slate-900 font-sans p-6 sm:p-10 max-w-[210mm] mx-auto leading-normal text-xs print:p-0 print:max-w-none print:text-[11px] print:leading-relaxed">
+    <div id="clinical-case-sheet-document" className="clinical-case-sheet-print bg-white text-slate-900 font-sans p-6 sm:p-10 max-w-[210mm] mx-auto leading-normal text-xs print:p-0 print:max-w-none print:text-[11px] print:leading-relaxed">
       {/* 1. OFFICIAL CLINIC HEADER & LETTERHEAD */}
       <header className="border-b-2 border-slate-900 pb-4 mb-5">
         <div className="flex items-start justify-between gap-4">
@@ -205,9 +264,9 @@ export const ClinicalCaseSheetDocument: React.FC<Props> = ({
             <div className="font-mono font-bold text-slate-900 text-xs mt-1">
               {patient.centre}
             </div>
-            <div className="text-slate-500 text-[10px]">
+            <div className="text-slate-500 text-[10px] whitespace-pre-line">
               {patient.centre.includes('Vijayawada')
-                ? 'Governorpet, Vijayawada, Andhra Pradesh'
+                ? '59A-15-15 Old P&T Colony, Patamata,\n2nd left after Nirmala Convent,\nDwaraka Suma, beside road of Ice Magic, Bhadraiah Nagar, Vijayawada,\nAndhra Pradesh 520010'
                 : 'Madhapur, Hyderabad, Telangana'}
             </div>
           </div>
@@ -222,7 +281,7 @@ export const ClinicalCaseSheetDocument: React.FC<Props> = ({
           <div>
             <span className="text-slate-500 block uppercase">Admission Date:</span>
             <span className="font-bold text-slate-900 text-xs">
-              {formatIndianDate(patient.admission_date || patient.created_at) || 'Recorded on file'}
+              {formatIndianDate(patient.admission_date || patient.created_at) || '-'}
             </span>
           </div>
           <div>
@@ -239,7 +298,7 @@ export const ClinicalCaseSheetDocument: React.FC<Props> = ({
       </header>
 
       {/* 2. PATIENT PROFILE & BASIC INFORMATION (AT TOP) */}
-      <section className="mb-5 break-inside-avoid">
+      <section className="mb-5 break-inside-avoid print:break-after-page">
         <div className="bg-slate-800 text-white px-3 py-1 text-[11px] font-bold uppercase tracking-wider rounded-t flex items-center justify-between">
           <span>Patient Profile &amp; Demographics</span>
           <span className="text-[10px] text-slate-300 font-normal">Section 1</span>
@@ -256,54 +315,54 @@ export const ClinicalCaseSheetDocument: React.FC<Props> = ({
           <div>
             <span className="text-slate-500 text-[10px] block uppercase font-medium">Age &amp; Gender</span>
             <span className="font-semibold text-slate-900 block">
-              {patient.age ? `${patient.age} Years` : 'Not recorded'} &bull; {patient.gender || 'Not specified'}
+              {[patient.age ? `${patient.age} Years` : '', patient.gender].filter(Boolean).join(' • ') || '-'}
             </span>
           </div>
 
           <div>
             <span className="text-slate-500 text-[10px] block uppercase font-medium">Date of Birth</span>
             <span className="font-semibold text-slate-900 font-mono block">
-              {patient.dob ? formatIndianDate(patient.dob) : 'Not recorded on file'}
+              {patient.dob ? formatIndianDate(patient.dob) : '-'}
             </span>
           </div>
 
           <div>
             <span className="text-slate-500 text-[10px] block uppercase font-medium">Contact Phone (Mobile)</span>
-            <span className="font-semibold text-slate-900 font-mono block">{patient.mobile}</span>
+            <span className="font-semibold text-slate-900 font-mono block">{patient.mobile || '-'}</span>
           </div>
 
           <div>
             <span className="text-slate-500 text-[10px] block uppercase font-medium">Email Address</span>
             <span className="font-semibold text-slate-900 font-mono text-xs break-all block">
-              {patient.email || `${patient.patient_id.toLowerCase().replace(/[^a-z0-9]/g, '')}@stycare.in`}
+              {patient.email || '-'}
             </span>
           </div>
 
           <div>
             <span className="text-slate-500 text-[10px] block uppercase font-medium">Preferred Language</span>
             <span className="font-semibold text-slate-900 block">
-              {patient.preferred_language || 'Telugu'}
+              {patient.preferred_language || '-'}
             </span>
           </div>
 
           <div className="sm:col-span-2">
             <span className="text-slate-500 text-[10px] block uppercase font-medium">Residential Address</span>
             <span className="font-medium text-slate-800 block">
-              {patient.address || 'Address not recorded on file'}
+              {patient.address || '-'}
             </span>
           </div>
 
           <div>
-            <span className="text-slate-500 text-[10px] block uppercase font-medium">Occupation &amp; Work Habit</span>
+            <span className="text-slate-500 text-[10px] block uppercase font-medium">Contact Person</span>
             <span className="font-medium text-slate-800 block">
-              {patient.occupation || 'Standard'} &bull; {patient.work_pattern || 'Regular activity'}
+              {patient.emergency_name || '-'}
             </span>
           </div>
 
           <div>
             <span className="text-slate-500 text-[10px] block uppercase font-medium">Assigned Senior Therapist</span>
             <span className="font-bold text-[#0C4A60] block">
-              {patient.assigned_therapist ? patient.assigned_therapist.replace(/^Dr\.\s*/i, '') : 'Surya Teja (Senior Therapist)'}
+              {patient.assigned_therapist ? patient.assigned_therapist.replace(/^Dr\.\s*/i, '') : '-'}
             </span>
           </div>
 
@@ -320,7 +379,7 @@ export const ClinicalCaseSheetDocument: React.FC<Props> = ({
               </div>
             ) : (
               <span className="font-medium text-slate-800 text-xs block">
-                {patient.emergency_name ? `${patient.emergency_name} (${patient.emergency_relationship || 'Contact'})` : 'Recorded on file'}
+                {patient.emergency_name ? `${patient.emergency_name} (${patient.emergency_relationship || 'Contact'})` : '-'}
               </span>
             )}
           </div>
@@ -328,14 +387,14 @@ export const ClinicalCaseSheetDocument: React.FC<Props> = ({
           <div>
             <span className="text-slate-500 text-[10px] block uppercase font-medium">Referred By</span>
             <span className="font-medium text-slate-800 block">
-              {patient.referred_by || 'Direct Patient / Walk-in'}
+              {patient.referred_by || '-'}
             </span>
           </div>
         </div>
       </section>
 
       {/* 3. SECTION 2: CHIEF COMPLAINT (C/o) & PRESENTING SYMPTOMS */}
-      <section className="mb-5 break-inside-avoid">
+      <section className="mb-5 break-inside-avoid print:break-after-page">
         <div className="bg-slate-800 text-white px-3 py-1 text-[11px] font-bold uppercase tracking-wider rounded-t flex items-center justify-between">
           <span>Chief Complaint (C/o) &amp; Presenting Symptoms</span>
           <span className="text-[10px] text-slate-300 font-normal">Section 2</span>
@@ -387,7 +446,7 @@ export const ClinicalCaseSheetDocument: React.FC<Props> = ({
       </section>
 
       {/* 4. SECTION 3: CHRONIC CONDITION PARAMETERS: HTN, DIABETES & THYROID */}
-      <section className="mb-5 break-inside-avoid">
+      <section className="mb-5 break-inside-avoid print:break-after-page">
         <div className="bg-slate-800 text-white px-3 py-1 text-[11px] font-bold uppercase tracking-wider rounded-t flex items-center justify-between">
           <span>Chronic Condition Parameters: HTN, Diabetes &amp; Thyroid</span>
           <span className="text-[10px] text-slate-300 font-normal">Section 3</span>
@@ -526,7 +585,7 @@ export const ClinicalCaseSheetDocument: React.FC<Props> = ({
       </section>
 
       {/* 5. SECTION 4: SURGICAL, NEUROLOGICAL & GENERAL MEDICAL HISTORY */}
-      <section className="mb-5 break-inside-avoid">
+      <section className="mb-5 break-inside-avoid print:break-after-page">
         <div className="bg-slate-800 text-white px-3 py-1 text-[11px] font-bold uppercase tracking-wider rounded-t flex items-center justify-between">
           <span>Surgical, Neurological &amp; General Medical History</span>
           <span className="text-[10px] text-slate-300 font-normal">Section 4</span>
@@ -575,6 +634,51 @@ export const ClinicalCaseSheetDocument: React.FC<Props> = ({
               </span>
             </div>
 
+            <div className="p-3 rounded-lg border border-slate-200 bg-slate-50/60">
+              <span className="font-semibold text-slate-800 block mb-0.5">H/o Bowel / Bladder involvement:</span>
+              <span className={medHistory.hasBowelBladderInvolvement ? 'text-rose-700 font-bold' : 'text-slate-500'}>
+                {medHistory.hasBowelBladderInvolvement ? `Present: ${medHistory.bowelBladderDetails || '-'}` : '-'}
+              </span>
+            </div>
+
+            <div className="p-3 rounded-lg border border-slate-200 bg-slate-50/60">
+              <span className="font-semibold text-slate-800 block mb-0.5">H/o Abnormal Sensation:</span>
+              <span className={medHistory.hasAbnormalSensation ? 'text-rose-700 font-semibold' : 'text-slate-500'}>
+                {medHistory.hasAbnormalSensation ? `Present: ${medHistory.abnormalSensationDetails || '-'}` : '-'}
+              </span>
+            </div>
+
+            <div className="p-3 rounded-lg border border-slate-200 bg-slate-50/60">
+              <span className="font-semibold text-slate-800 block mb-0.5">H/o Giddiness / Dizziness:</span>
+              <span className={medHistory.hasGiddiness ? 'text-rose-700 font-semibold' : 'text-slate-500'}>
+                {medHistory.hasGiddiness ? `Present: ${medHistory.giddinessDetails || '-'}` : '-'}
+              </span>
+            </div>
+
+            <div className="p-3 rounded-lg border border-slate-200 bg-slate-50/60">
+              <span className="font-semibold text-slate-800 block mb-0.5">H/o Headache:</span>
+              <span className={medHistory.hasHeadache ? 'text-rose-700 font-semibold' : 'text-slate-500'}>
+                {medHistory.hasHeadache ? `Present: ${medHistory.headacheDetails || '-'}` : '-'}
+              </span>
+            </div>
+
+            <div className="p-3 rounded-lg border border-slate-200 bg-slate-50/60">
+              <span className="font-semibold text-slate-800 block mb-0.5">H/o Weight Loss / Fever:</span>
+              <span className={medHistory.hasWeightLossFever ? 'text-rose-700 font-bold' : 'text-slate-500'}>
+                {medHistory.hasWeightLossFever ? `Present: ${medHistory.weightLossFeverDetails || '-'}` : '-'}
+              </span>
+            </div>
+
+            <div className="p-3 rounded-lg border border-slate-200 bg-slate-50/60">
+              <span className="font-semibold text-slate-800 block mb-0.5">Previous Similar Episodes:</span>
+              <span className="text-slate-700 font-medium">{medHistory.previousEpisodes || '-'}</span>
+            </div>
+
+            <div className="p-3 rounded-lg border border-slate-200 bg-slate-50/60">
+              <span className="font-semibold text-slate-800 block mb-0.5">Family Medical History:</span>
+              <span className="text-slate-700 font-medium">{medHistory.familyHistory || '-'}</span>
+            </div>
+
             <div className="sm:col-span-2 p-3 rounded-lg border border-slate-200 bg-slate-50/60">
               <span className="font-semibold text-slate-800 block mb-0.5">
                 Menstrual &amp; Obstetric History:
@@ -586,7 +690,7 @@ export const ClinicalCaseSheetDocument: React.FC<Props> = ({
       </section>
 
       {/* 6. SECTION 5: PHYSICAL EXAMINATION & CLINICAL BIOMETRICS */}
-      <section className="mb-5 break-inside-avoid">
+      <section className="mb-5 print:mb-4 print:break-after-page">
         <div className="bg-slate-800 text-white px-3 py-1 text-[11px] font-bold uppercase tracking-wider rounded-t flex items-center justify-between">
           <span>Physical Examination, Functional Tests &amp; Diagnostics</span>
           <span className="text-[10px] text-slate-300 font-normal">Section 5</span>
@@ -666,18 +770,47 @@ export const ClinicalCaseSheetDocument: React.FC<Props> = ({
 
             <div className="p-2.5 bg-white border border-slate-200 rounded">
               <span className="text-slate-700 font-bold text-[10px] block uppercase">
-                Sensory &amp; Peripheral Arterial Pulse:
+                Knee Biometrics &amp; Alignment:
               </span>
               <div className="mt-1 space-y-0.5">
                 <div className="flex justify-between">
-                  <span className="text-slate-600">Sensory Deficit:</span>
-                  <span className="font-semibold text-slate-900">{examData.sensoryDeficit || '-'}</span>
+                  <span className="text-slate-600 text-[10px]">Alignment:</span>
+                  <span className="font-semibold text-slate-900">{examData.kneeVarusValgus || '-'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-600">Dorsalis Pedis:</span>
-                  <span className="font-semibold text-slate-900">{examData.dorsalisPedis || '-'}</span>
+                  <span className="text-slate-600 text-[10px]">Flexion Deformity:</span>
+                  <span className="font-semibold text-slate-900">{examData.kneeFixedFlexion || '-'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600 text-[10px]">Hyperextension:</span>
+                  <span className="font-semibold text-slate-900">{examData.kneeHyperextension || '-'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600 text-[10px]">Range of Motion:</span>
+                  <span className="font-semibold text-slate-900">{examData.kneeRangeOfMotion || '-'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600 text-[10px]">Tenderness:</span>
+                  <span className="font-semibold text-slate-900">{examData.kneeTenderness || '-'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600 text-[10px]">Effusion:</span>
+                  <span className="font-semibold text-slate-900">{examData.kneeEffusion || '-'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600 text-[10px]">Stability Tests:</span>
+                  <span className="font-semibold text-slate-900">{examData.kneeStabilityTests || '-'}</span>
                 </div>
               </div>
+            </div>
+
+            <div className="sm:col-span-2 p-2.5 bg-white border border-slate-200 rounded">
+              <span className="text-slate-700 font-bold text-[10px] uppercase">
+                Extremity Joint Assessment:
+              </span>
+              <p className="mt-1 text-slate-900 font-semibold">
+                {examData.extremityJointAssessment || '-'}
+              </p>
             </div>
           </div>
 
@@ -721,7 +854,7 @@ export const ClinicalCaseSheetDocument: React.FC<Props> = ({
       </section>
 
       {/* 6. SECTION 6: PRESCRIBED THERAPY PLAN & CLINICAL PRECAUTIONS */}
-      <section className="mb-5 break-inside-avoid">
+      <section className="mb-5 print:mb-4 print:break-after-page">
         <div className="bg-slate-800 text-white px-3 py-1 text-[11px] font-bold uppercase tracking-wider rounded-t flex items-center justify-between">
           <span>Prescribed Yoga Therapy Protocol &amp; Clinical Contraindications</span>
           <span className="text-[10px] text-slate-300 font-normal">Section 6</span>
@@ -829,7 +962,7 @@ export const ClinicalCaseSheetDocument: React.FC<Props> = ({
 
       {/* 7. SECTION 7: CLINICAL FOLLOW-UP & PROGRESS HISTORY */}
       {followupList.length > 0 && (
-        <section className="mb-5 break-inside-avoid">
+        <section className="mb-5 print:mb-4 print:break-after-page">
           <div className="bg-slate-800 text-white px-3 py-1 text-[11px] font-bold uppercase tracking-wider rounded-t flex items-center justify-between">
             <span>Clinical Follow-up &amp; Progress History</span>
             <span className="text-[10px] text-slate-300 font-normal">Section 7</span>
@@ -846,7 +979,7 @@ export const ClinicalCaseSheetDocument: React.FC<Props> = ({
               </thead>
               <tbody className="divide-y divide-slate-200">
                 {followupList.map((rec, i) => (
-                  <tr key={i} className="hover:bg-slate-50">
+                  <tr key={i} className="hover:bg-slate-50 break-inside-avoid">
                     <td className="py-2 px-3 font-mono font-semibold text-slate-900">
                       {formatIndianDate(rec.followup_date)}
                     </td>
@@ -873,7 +1006,7 @@ export const ClinicalCaseSheetDocument: React.FC<Props> = ({
       )}
 
       {/* 8. SECTION 7: ADMISSION FEE & PAYMENT TRANSACTION DETAILS (AT LAST) */}
-      <section className="mb-6 break-inside-avoid">
+      <section className="mb-6 print:mb-4">
         <div className="bg-slate-800 text-white px-3 py-1 text-[11px] font-bold uppercase tracking-wider rounded-t flex items-center justify-between">
           <span>Admission Fee Structure &amp; Payment Transaction Ledger</span>
           <span className="text-[10px] text-slate-300 font-normal">Final Section (Financial Record)</span>
@@ -972,7 +1105,7 @@ export const ClinicalCaseSheetDocument: React.FC<Props> = ({
               (Attending Yoga Therapist Signature)
             </div>
             <span className="font-bold text-slate-900 block mt-1.5">
-              {patient.assigned_therapist ? patient.assigned_therapist.replace(/^Dr\.\s*/i, '') : 'Surya Teja (Senior Therapist)'}
+              {patient.assigned_therapist ? patient.assigned_therapist.replace(/^Dr\.\s*/i, '') : '-'}
             </span>
             <span className="text-[10px] text-slate-500 block">Attending Clinical Yoga Therapist</span>
           </div>
@@ -1006,8 +1139,8 @@ export const ClinicalCaseSheetDocument: React.FC<Props> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-slate-900/80 backdrop-blur-xs flex items-center justify-center p-2 sm:p-6 print:p-0 print:bg-white print:overflow-visible">
-      <div className="w-full max-w-[210mm] max-h-[92vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-300 print:max-h-none print:shadow-none print:border-none print:rounded-none">
+    <div className="case-sheet-modal-backdrop fixed inset-0 z-[9999] bg-slate-900/80 backdrop-blur-xs flex items-center justify-center p-2 sm:p-6 print:static print:p-0 print:m-0 print:bg-white print:overflow-visible print:block print:inset-auto print:z-auto">
+      <div className="case-sheet-modal-container w-full max-w-[210mm] max-h-[92vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-300 print:static print:max-w-none print:w-full print:max-h-none print:h-auto print:shadow-none print:border-none print:rounded-none print:overflow-visible print:block print:p-0 print:m-0">
         {/* On-screen Action Toolbar (Fixed at top of modal card, completely hidden on print) */}
         <div className="w-full bg-white px-5 py-3.5 border-b border-slate-200 shadow-xs flex items-center justify-between gap-3 shrink-0 print:hidden">
           <div className="flex items-center gap-2.5">
@@ -1028,10 +1161,11 @@ export const ClinicalCaseSheetDocument: React.FC<Props> = ({
             <button
               type="button"
               onClick={handlePrint}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0C4A60] hover:bg-[#083344] text-white text-xs font-semibold shadow-sm transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#0C4A60] hover:bg-[#083344] text-white text-xs font-semibold shadow-sm transition-colors cursor-pointer"
+              title="Print official case sheet to printer or PDF"
             >
               <Printer className="w-3.5 h-3.5 text-amber-300" />
-              <span>Print Official Case Sheet</span>
+              <span>Print Case Sheet</span>
             </button>
 
             {onClose && (
@@ -1048,8 +1182,8 @@ export const ClinicalCaseSheetDocument: React.FC<Props> = ({
         </div>
 
         {/* Scrollable Document Sheet Paper Viewport */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 bg-slate-100 print:p-0 print:bg-white print:overflow-visible">
-          <div className="max-w-[210mm] mx-auto bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden print:shadow-none print:border-none print:rounded-none">
+        <div className="case-sheet-scroll-viewport flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 bg-slate-100 print:static print:p-0 print:m-0 print:bg-white print:overflow-visible print:block print:h-auto print:max-h-none">
+          <div className="case-sheet-paper-wrapper max-w-[210mm] mx-auto bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden print:static print:max-w-none print:w-full print:shadow-none print:border-none print:rounded-none print:overflow-visible print:block print:p-0 print:m-0">
             {documentContent}
           </div>
         </div>

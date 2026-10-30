@@ -10,6 +10,7 @@ import { DashboardView } from './components/DashboardView.tsx';
 import { PatientDataScreen } from './components/PatientDataScreen.tsx';
 import { PatientRegistrationForm } from './components/PatientRegistrationForm.tsx';
 import { PatientProfileView } from './components/PatientProfileView.tsx';
+import { PatientEditModal } from './components/PatientEditModal.tsx';
 import { LoginView } from './components/LoginView.tsx';
 import { Patient, DashboardStats } from './types.ts';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
@@ -40,7 +41,8 @@ export default function App() {
     return null;
   });
 
-  const [currentView, setCurrentView] = useState<'dashboard' | 'patients' | 'register' | 'profile'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'patients' | 'register' | 'profile' | 'edit'>('dashboard');
+  const [editSection, setEditSection] = useState<'section1' | 'section2' | 'section3' | 'section4' | 'section5'>('section1');
   const [patients, setPatients] = useState<Patient[]>([]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(false);
@@ -206,10 +208,10 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex text-slate-800 antialiased font-sans selection:bg-[#0C4A60] selection:text-white">
+    <div className="min-h-screen bg-[#F8FAFC] flex text-slate-800 antialiased font-sans selection:bg-[#0C4A60] selection:text-white print:bg-white print:min-h-0 print:block">
       {/* Toast Notification */}
       {toast && (
-        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 px-4 py-3 rounded-xl shadow-xl border bg-slate-900 text-white text-xs sm:text-sm animate-bounce-short">
+        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 px-4 py-3 rounded-xl shadow-xl border bg-slate-900 text-white text-xs sm:text-sm animate-bounce-short print:hidden">
           {toast.type === 'success' ? (
             <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
           ) : (
@@ -235,7 +237,7 @@ export default function App() {
 
       {/* Main Content Area */}
       <div
-        className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ease-in-out ${
+        className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ease-in-out print:pl-0 print:m-0 print:p-0 ${
           isSidebarOpenDesktop ? 'lg:pl-64' : 'lg:pl-0'
         }`}
       >
@@ -256,7 +258,7 @@ export default function App() {
 
         {/* View Content */}
         <main
-          className={`flex-1 px-4 sm:px-8 py-6 sm:py-8 max-w-7xl w-full mx-auto ${
+          className={`flex-1 px-4 sm:px-8 py-6 sm:py-8 max-w-7xl w-full mx-auto print:p-0 print:m-0 print:max-w-none ${
             currentView === 'profile' ? 'patient-profile-container no-scrollbar' : ''
           }`}
         >
@@ -314,6 +316,21 @@ export default function App() {
               onStatusChange={handleStatusChange}
               onUpdatePatient={handleUpdatePatient}
               onDeleteRequest={(p) => handleDeletePatient(p.id)}
+              onEditClick={(sec) => {
+                setEditSection(sec || 'section1');
+                setCurrentView('edit');
+              }}
+            />
+          )}
+
+          {/* 5. Full Screen Edit Patient View */}
+          {currentView === 'edit' && selectedPatient && (
+            <PatientEditModal
+              patient={selectedPatient}
+              isOpen={true}
+              onClose={() => setCurrentView('profile')}
+              onSave={handleUpdatePatient}
+              initialSection={editSection}
             />
           )}
         </main>

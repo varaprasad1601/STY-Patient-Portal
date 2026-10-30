@@ -10,8 +10,8 @@ import {
 } from 'lucide-react';
 
 interface Props {
-  currentView: 'dashboard' | 'patients' | 'register' | 'profile';
-  onNavigate: (view: 'dashboard' | 'patients' | 'register' | 'profile') => void;
+  currentView: 'dashboard' | 'patients' | 'register' | 'profile' | 'edit';
+  onNavigate: (view: 'dashboard' | 'patients' | 'register' | 'profile' | 'edit') => void;
   isOpenMobile: boolean;
   isOpenDesktop?: boolean;
   onCloseMobile: () => void;
@@ -36,13 +36,13 @@ export const Sidebar: React.FC<Props> = ({
       {isOpenMobile && (
         <div
           onClick={onCloseMobile}
-          className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-xs lg:hidden"
+          className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-xs lg:hidden print:hidden"
         />
       )}
 
       {/* Sidebar Container */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200/90 flex flex-col transition-transform duration-300 ease-in-out ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200/90 flex flex-col transition-transform duration-300 ease-in-out print:hidden ${
           isOpenMobile ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
         } ${
           isOpenDesktop ? 'lg:translate-x-0' : 'lg:-translate-x-full'

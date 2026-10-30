@@ -89,14 +89,14 @@ table {
 
 /* =========================================================================
    PROFESSIONAL CLINICAL CASE SHEET PRINT SPECIFICATIONS
-   Hides all web interface chrome, sidebars, buttons, action controls, and tabs.
-   Produces a clean, section-wise medical document with profile info at the top
-   and payments at the very end.
+   Produces a pristine, multi-page paginated medical case sheet document.
+   Includes full patient profile, history, diagnostics, all 12 therapy weeks,
+   follow-ups, and financial fee records with natural page breaks.
    ========================================================================= */
 @media print {
   @page {
     size: A4 portrait;
-    margin: 10mm 12mm 12mm 12mm;
+    margin: 12mm 10mm 12mm 10mm;
   }
 
   html,
@@ -105,44 +105,124 @@ table {
     color: #0f172a !important;
     margin: 0 !important;
     padding: 0 !important;
-    font-size: 10.5pt !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
-  /* Hide everything in body by default during print */
-  body * {
-    visibility: hidden !important;
+  /* Cleanly hide web UI chrome using display:none so it doesn't create phantom height */
+  .print\:hidden,
+  aside,
+  header.sticky,
+  .patient-profile-screen-only,
+  button,
+  .no-print {
+    display: none !important;
   }
 
-  /* Make only the clinical case sheet print container visible */
-  .clinical-case-sheet-print,
-  .clinical-case-sheet-print * {
-    visibility: visible !important;
-  }
-
-  .clinical-case-sheet-print {
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
+  /* Reset layout containers to normal document flow with zero margins/padding */
+  #root,
+  #root > div,
+  main,
+  .patient-profile-container,
+  .patient-profile-view {
+    position: static !important;
+    display: block !important;
     width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
     margin: 0 !important;
     padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+  }
+
+  /* Case sheet modal backdrop & wrapper reset: prevent position:fixed viewport repeating bug */
+  .case-sheet-modal-backdrop,
+  .case-sheet-modal-container,
+  .case-sheet-scroll-viewport,
+  .case-sheet-paper-wrapper {
+    position: static !important;
+    inset: auto !important;
     display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  /* The actual multi-page clinical case sheet document */
+  .clinical-case-sheet-print {
+    position: static !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
     background: #ffffff !important;
     box-shadow: none !important;
     border: none !important;
+    color: #0f172a !important;
+    font-size: 10pt !important;
+    line-height: 1.35 !important;
+    overflow: visible !important;
   }
 
-  /* Break inside avoid for clean page transitions */
-  .break-inside-avoid,
-  section,
-  table,
+  /* Allow long clinical sections and tables to naturally break across pages */
+  section {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+
+  table {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+    width: 100% !important;
+  }
+
+  /* Avoid page breaks inside individual table rows, single test cards, or weekly protocols */
   tr,
+  .break-inside-avoid,
+  .case-sheet-card,
+  .therapy-week-card {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Repeat table headers cleanly across pages */
+  thead {
+    display: table-header-group !important;
+  }
+
+  /* Prevent headings from being stranded at the bottom of pages */
+  h1, h2, h3, h4, .section-heading {
+    break-after: avoid !important;
+    page-break-after: avoid !important;
+  }
+
+  /* Footer signatures block should stay intact */
   footer {
     break-inside: avoid !important;
     page-break-inside: avoid !important;
   }
 }
+
 
 

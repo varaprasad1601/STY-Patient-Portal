@@ -2,6 +2,7 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
+import { GoogleGenAI } from '@google/genai';
 import {
   getAllPatients,
   getPatientById,
@@ -42,6 +43,67 @@ async function startServer() {
       res.status(500).json({ error: err.message });
     }
   });
+
+  // 0.1 Audio Transcription supporting Telugu, Hindi, and English
+  app.post('/api/transcribe', async (req, res) => {
+    try {
+      const { audioBase64, mimeType, language } = req.body;
+      if (!audioBase64) {
+        return res.status(400).json({ error: 'No audio data provided.' });
+      }
+
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        return res.json({
+          transcript: '',
+          note: 'No Gemini API key found on server. Using client-side speech recognition.'
+        });
+      }
+
+      const ai = new GoogleGenAI({
+        apiKey,
+        httpOptions: {
+          headers: {
+            'User-Agent': 'aistudio-build'
+          }
+        }
+      });
+
+      const base64Data = audioBase64.includes(',') ? audioBase64.split(',')[1] : audioBase64;
+      const detectedMime = mimeType || (audioBase64.startsWith('data:') ? audioBase64.split(';')[0].replace('data:', '') : 'audio/webm');
+
+      let langInstruction = 'Transcribe this clinical patient case narrative accurately. The speaker is talking in Indian languages—specifically Telugu, Hindi, English, or a clinical mixture of them. Provide the faithful transcript.';
+      if (language === 'te') {
+        langInstruction = 'The speaker is speaking in Telugu (తెలుగు). Transcribe accurately in Telugu script with standard clinical terminology.';
+      } else if (language === 'hi') {
+        langInstruction = 'The speaker is speaking in Hindi (हिंदी). Transcribe accurately in Devanagari Hindi script with standard clinical terminology.';
+      } else if (language === 'en') {
+        langInstruction = 'The speaker is speaking in English. Transcribe accurately in English with medical terminology.';
+      }
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.8-flash',
+        contents: [
+          {
+            inlineData: {
+              mimeType: detectedMime || 'audio/webm',
+              data: base64Data
+            }
+          },
+          {
+            text: `${langInstruction} Return only the transcription text without commentary or prefixes.`
+          }
+        ]
+      });
+
+      const transcript = response.text ? response.text.trim() : '';
+      res.json({ transcript });
+    } catch (err: any) {
+      console.error('Audio transcription error:', err);
+      res.status(500).json({ error: err.message || 'Failed to transcribe audio' });
+    }
+  });
+
   // 1. Get statistics for Home Dashboard
   app.get('/api/stats', (req, res) => {
     try {
