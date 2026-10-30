@@ -3,19 +3,22 @@ import { Patient, DashboardStats } from '../types';
 
 // Helper to safely parse response as JSON
 async function safeParseJsonResponse(response: Response): Promise<{ ok: boolean; data?: any; error?: string }> {
+  const text = await response.text();
   try {
     const contentType = response.headers.get('content-type') || '';
     if (!contentType.includes('application/json')) {
-      return { ok: false, error: 'Non-JSON response' };
+      console.error('API Error - Non-JSON response received:', text);
+      return { ok: false, error: 'Non-JSON response received from server' };
     }
-    const text = await response.text();
+    
     if (!text || text.trim() === '') {
       return { ok: false, error: 'Empty response body' };
     }
     const data = JSON.parse(text);
     return { ok: response.ok, data };
   } catch (err: any) {
-    return { ok: false, error: err.message || 'JSON parse error' };
+    console.error('API Error - JSON parse error:', err, 'Content:', text);
+    return { ok: false, error: 'JSON parse error: ' + err.message };
   }
 }
 

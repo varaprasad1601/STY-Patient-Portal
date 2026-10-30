@@ -657,6 +657,7 @@ export function updatePatient(id: number | string, data: any) {
     WHERE id = @id OR patient_id = @id
   `);
 
+  console.log('DEBUG: Updating DB record for ID:', id);
   stmt.run({
     id,
     full_name: data.full_name !== undefined ? data.full_name : (existing.full_name || ''),
